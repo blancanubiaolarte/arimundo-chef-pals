@@ -10,33 +10,62 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
+import { Route as OnboardingPerroRouteImport } from './routes/onboarding.perro'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRecuperarRoute = AuthRecuperarRouteImport.update({
+  id: '/recuperar',
+  path: '/recuperar',
+  getParentRoute: () => AuthRoute,
+} as any)
+const OnboardingPerroRoute = OnboardingPerroRouteImport.update({
+  id: '/onboarding/perro',
+  path: '/onboarding/perro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/auth/recuperar': typeof AuthRecuperarRoute
+  '/onboarding/perro': typeof OnboardingPerroRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/auth/recuperar': typeof AuthRecuperarRoute
+  '/onboarding/perro': typeof OnboardingPerroRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/auth/recuperar': typeof AuthRecuperarRoute
+  '/onboarding/perro': typeof OnboardingPerroRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/auth' | '/auth/recuperar' | '/onboarding/perro'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/auth' | '/auth/recuperar' | '/onboarding/perro'
+  id: '__root__' | '/' | '/auth' | '/auth/recuperar' | '/onboarding/perro'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
+  OnboardingPerroRoute: typeof OnboardingPerroRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +77,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/recuperar': {
+      id: '/auth/recuperar'
+      path: '/recuperar'
+      fullPath: '/auth/recuperar'
+      preLoaderRoute: typeof AuthRecuperarRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/onboarding/perro': {
+      id: '/onboarding/perro'
+      path: '/onboarding/perro'
+      fullPath: '/onboarding/perro'
+      preLoaderRoute: typeof OnboardingPerroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthRouteChildren {
+  AuthRecuperarRoute: typeof AuthRecuperarRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthRecuperarRoute: AuthRecuperarRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
+  OnboardingPerroRoute: OnboardingPerroRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
