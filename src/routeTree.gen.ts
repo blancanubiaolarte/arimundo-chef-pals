@@ -11,9 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ChefRouteImport } from './routes/chef'
+import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
 import { Route as OnboardingPerroRouteImport } from './routes/onboarding.perro'
+import { Route as PerrosIndexRouteImport } from './routes/perros.index'
+import { Route as PerrosDogIdRouteImport } from './routes/perros.$dogId'
 import { Route as RecetasIndexRouteImport } from './routes/recetas.index'
 import { Route as RecetasSlugRouteImport } from './routes/recetas.$slug'
 
@@ -25,6 +29,16 @@ const IndexRoute = IndexRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChefRoute = ChefRouteImport.update({
+  id: '/chef',
+  path: '/chef',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComprasRoute = ComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlanesRoute = PlanesRouteImport.update({
@@ -42,6 +56,16 @@ const OnboardingPerroRoute = OnboardingPerroRouteImport.update({
   path: '/onboarding/perro',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PerrosIndexRoute = PerrosIndexRouteImport.update({
+  id: '/perros/',
+  path: '/perros/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerrosDogIdRoute = PerrosDogIdRouteImport.update({
+  id: '/perros/$dogId',
+  path: '/perros/$dogId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecetasIndexRoute = RecetasIndexRouteImport.update({
   id: '/recetas/',
   path: '/recetas/',
@@ -56,29 +80,41 @@ const RecetasSlugRoute = RecetasSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/chef': typeof ChefRoute
+  '/compras': typeof ComprasRoute
   '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
+  '/perros/$dogId': typeof PerrosDogIdRoute
   '/recetas/$slug': typeof RecetasSlugRoute
+  '/perros/': typeof PerrosIndexRoute
   '/recetas/': typeof RecetasIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/chef': typeof ChefRoute
+  '/compras': typeof ComprasRoute
   '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
+  '/perros/$dogId': typeof PerrosDogIdRoute
   '/recetas/$slug': typeof RecetasSlugRoute
+  '/perros': typeof PerrosIndexRoute
   '/recetas': typeof RecetasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/chef': typeof ChefRoute
+  '/compras': typeof ComprasRoute
   '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
+  '/perros/$dogId': typeof PerrosDogIdRoute
   '/recetas/$slug': typeof RecetasSlugRoute
+  '/perros/': typeof PerrosIndexRoute
   '/recetas/': typeof RecetasIndexRoute
 }
 export interface FileRouteTypes {
@@ -86,37 +122,53 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/chef'
+    | '/compras'
     | '/planes'
     | '/auth/recuperar'
     | '/onboarding/perro'
+    | '/perros/$dogId'
     | '/recetas/$slug'
+    | '/perros/'
     | '/recetas/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/chef'
+    | '/compras'
     | '/planes'
     | '/auth/recuperar'
     | '/onboarding/perro'
+    | '/perros/$dogId'
     | '/recetas/$slug'
+    | '/perros'
     | '/recetas'
   id:
     | '__root__'
     | '/'
     | '/auth'
+    | '/chef'
+    | '/compras'
     | '/planes'
     | '/auth/recuperar'
     | '/onboarding/perro'
+    | '/perros/$dogId'
     | '/recetas/$slug'
+    | '/perros/'
     | '/recetas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
+  ChefRoute: typeof ChefRoute
+  ComprasRoute: typeof ComprasRoute
   PlanesRoute: typeof PlanesRoute
   OnboardingPerroRoute: typeof OnboardingPerroRoute
+  PerrosDogIdRoute: typeof PerrosDogIdRoute
   RecetasSlugRoute: typeof RecetasSlugRoute
+  PerrosIndexRoute: typeof PerrosIndexRoute
   RecetasIndexRoute: typeof RecetasIndexRoute
 }
 
@@ -134,6 +186,20 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chef': {
+      id: '/chef'
+      path: '/chef'
+      fullPath: '/chef'
+      preLoaderRoute: typeof ChefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compras': {
+      id: '/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof ComprasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/planes': {
@@ -155,6 +221,20 @@ declare module '@tanstack/react-router' {
       path: '/onboarding/perro'
       fullPath: '/onboarding/perro'
       preLoaderRoute: typeof OnboardingPerroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perros/': {
+      id: '/perros/'
+      path: '/perros'
+      fullPath: '/perros/'
+      preLoaderRoute: typeof PerrosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perros/$dogId': {
+      id: '/perros/$dogId'
+      path: '/perros/$dogId'
+      fullPath: '/perros/$dogId'
+      preLoaderRoute: typeof PerrosDogIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recetas/': {
@@ -187,9 +267,13 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
+  ChefRoute: ChefRoute,
+  ComprasRoute: ComprasRoute,
   PlanesRoute: PlanesRoute,
   OnboardingPerroRoute: OnboardingPerroRoute,
+  PerrosDogIdRoute: PerrosDogIdRoute,
   RecetasSlugRoute: RecetasSlugRoute,
+  PerrosIndexRoute: PerrosIndexRoute,
   RecetasIndexRoute: RecetasIndexRoute,
 }
 export const routeTree = rootRouteImport
