@@ -11,8 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
 import { Route as OnboardingPerroRouteImport } from './routes/onboarding.perro'
+import { Route as RecetasIndexRouteImport } from './routes/recetas.index'
+import { Route as RecetasSlugRouteImport } from './routes/recetas.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanesRoute = PlanesRouteImport.update({
+  id: '/planes',
+  path: '/planes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRecuperarRoute = AuthRecuperarRouteImport.update({
@@ -34,38 +42,82 @@ const OnboardingPerroRoute = OnboardingPerroRouteImport.update({
   path: '/onboarding/perro',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecetasIndexRoute = RecetasIndexRouteImport.update({
+  id: '/recetas/',
+  path: '/recetas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecetasSlugRoute = RecetasSlugRouteImport.update({
+  id: '/recetas/$slug',
+  path: '/recetas/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
+  '/recetas/$slug': typeof RecetasSlugRoute
+  '/recetas/': typeof RecetasIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
+  '/recetas/$slug': typeof RecetasSlugRoute
+  '/recetas': typeof RecetasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
+  '/recetas/$slug': typeof RecetasSlugRoute
+  '/recetas/': typeof RecetasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/auth/recuperar' | '/onboarding/perro'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/planes'
+    | '/auth/recuperar'
+    | '/onboarding/perro'
+    | '/recetas/$slug'
+    | '/recetas/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/auth/recuperar' | '/onboarding/perro'
-  id: '__root__' | '/' | '/auth' | '/auth/recuperar' | '/onboarding/perro'
+  to:
+    | '/'
+    | '/auth'
+    | '/planes'
+    | '/auth/recuperar'
+    | '/onboarding/perro'
+    | '/recetas/$slug'
+    | '/recetas'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/planes'
+    | '/auth/recuperar'
+    | '/onboarding/perro'
+    | '/recetas/$slug'
+    | '/recetas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
+  PlanesRoute: typeof PlanesRoute
   OnboardingPerroRoute: typeof OnboardingPerroRoute
+  RecetasSlugRoute: typeof RecetasSlugRoute
+  RecetasIndexRoute: typeof RecetasIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -84,6 +136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/planes': {
+      id: '/planes'
+      path: '/planes'
+      fullPath: '/planes'
+      preLoaderRoute: typeof PlanesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/recuperar': {
       id: '/auth/recuperar'
       path: '/recuperar'
@@ -96,6 +155,20 @@ declare module '@tanstack/react-router' {
       path: '/onboarding/perro'
       fullPath: '/onboarding/perro'
       preLoaderRoute: typeof OnboardingPerroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recetas/': {
+      id: '/recetas/'
+      path: '/recetas'
+      fullPath: '/recetas/'
+      preLoaderRoute: typeof RecetasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recetas/$slug': {
+      id: '/recetas/$slug'
+      path: '/recetas/$slug'
+      fullPath: '/recetas/$slug'
+      preLoaderRoute: typeof RecetasSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -114,7 +187,10 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
+  PlanesRoute: PlanesRoute,
   OnboardingPerroRoute: OnboardingPerroRoute,
+  RecetasSlugRoute: RecetasSlugRoute,
+  RecetasIndexRoute: RecetasIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
