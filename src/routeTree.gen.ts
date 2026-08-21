@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChefRouteImport } from './routes/chef'
 import { Route as ComprasRouteImport } from './routes/compras'
+import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
 import { Route as OnboardingPerroRouteImport } from './routes/onboarding.perro'
@@ -24,6 +26,11 @@ import { Route as RecetasSlugRouteImport } from './routes/recetas.$slug'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -39,6 +46,11 @@ const ChefRoute = ChefRouteImport.update({
 const ComprasRoute = ComprasRouteImport.update({
   id: '/compras',
   path: '/compras',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlanesRoute = PlanesRouteImport.update({
@@ -79,9 +91,11 @@ const RecetasSlugRoute = RecetasSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/perfil': typeof PerfilRoute
   '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
@@ -92,9 +106,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/perfil': typeof PerfilRoute
   '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
@@ -106,9 +122,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/perfil': typeof PerfilRoute
   '/planes': typeof PlanesRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
@@ -121,9 +139,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
     | '/chef'
     | '/compras'
+    | '/perfil'
     | '/planes'
     | '/auth/recuperar'
     | '/onboarding/perro'
@@ -134,9 +154,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/auth'
     | '/chef'
     | '/compras'
+    | '/perfil'
     | '/planes'
     | '/auth/recuperar'
     | '/onboarding/perro'
@@ -147,9 +169,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/auth'
     | '/chef'
     | '/compras'
+    | '/perfil'
     | '/planes'
     | '/auth/recuperar'
     | '/onboarding/perro'
@@ -161,9 +185,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRouteWithChildren
   ChefRoute: typeof ChefRoute
   ComprasRoute: typeof ComprasRoute
+  PerfilRoute: typeof PerfilRoute
   PlanesRoute: typeof PlanesRoute
   OnboardingPerroRoute: typeof OnboardingPerroRoute
   PerrosDogIdRoute: typeof PerrosDogIdRoute
@@ -179,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -200,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/compras'
       fullPath: '/compras'
       preLoaderRoute: typeof ComprasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/planes': {
@@ -266,9 +306,11 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AuthRoute: AuthRouteWithChildren,
   ChefRoute: ChefRoute,
   ComprasRoute: ComprasRoute,
+  PerfilRoute: PerfilRoute,
   PlanesRoute: PlanesRoute,
   OnboardingPerroRoute: OnboardingPerroRoute,
   PerrosDogIdRoute: PerrosDogIdRoute,

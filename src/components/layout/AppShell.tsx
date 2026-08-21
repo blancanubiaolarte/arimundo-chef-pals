@@ -32,10 +32,10 @@ export function AppShell({
   children,
   hideNav = false,
 }: {
-  title?: string;
-  subtitle?: string;
+  title?: string | undefined;
+  subtitle?: string | undefined;
   children: ReactNode;
-  hideNav?: boolean;
+  hideNav?: boolean | undefined;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
