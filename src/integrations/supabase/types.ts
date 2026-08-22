@@ -14,16 +14,756 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      achievements: {
+        Row: {
+          code: string
+          earned_at: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          earned_at?: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          earned_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_conversations: {
+        Row: {
+          created_at: string
+          dog_id: string | null
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dog_id?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dog_id?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_conversations_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "dogs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          recipe_ids: string[]
+          role: Database["public"]["Enums"]["chat_role"]
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          recipe_ids?: string[]
+          role: Database["public"]["Enums"]["chat_role"]
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          recipe_ids?: string[]
+          role?: Database["public"]["Enums"]["chat_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_recipes: {
+        Row: {
+          created_at: string
+          date: string
+          dog_id: string | null
+          id: string
+          recipe_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          dog_id?: string | null
+          id?: string
+          recipe_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          dog_id?: string | null
+          id?: string
+          recipe_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_recipes_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "dogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dogs: {
+        Row: {
+          activity_level: Database["public"]["Enums"]["activity_level"]
+          age_years: number
+          allergies: string[]
+          birth_date: string | null
+          breed: string
+          cooking_time: string
+          created_at: string
+          disliked_ingredients: string[]
+          favorite_ingredients: string[]
+          forbidden_ingredients: string[]
+          goal: string
+          has_oven: boolean
+          id: string
+          name: string
+          photo_url: string | null
+          sex: Database["public"]["Enums"]["dog_sex"]
+          updated_at: string
+          user_id: string
+          weekly_budget: number
+          weight: number
+          weight_unit: Database["public"]["Enums"]["weight_unit"]
+        }
+        Insert: {
+          activity_level?: Database["public"]["Enums"]["activity_level"]
+          age_years?: number
+          allergies?: string[]
+          birth_date?: string | null
+          breed?: string
+          cooking_time?: string
+          created_at?: string
+          disliked_ingredients?: string[]
+          favorite_ingredients?: string[]
+          forbidden_ingredients?: string[]
+          goal?: string
+          has_oven?: boolean
+          id?: string
+          name: string
+          photo_url?: string | null
+          sex?: Database["public"]["Enums"]["dog_sex"]
+          updated_at?: string
+          user_id: string
+          weekly_budget?: number
+          weight?: number
+          weight_unit?: Database["public"]["Enums"]["weight_unit"]
+        }
+        Update: {
+          activity_level?: Database["public"]["Enums"]["activity_level"]
+          age_years?: number
+          allergies?: string[]
+          birth_date?: string | null
+          breed?: string
+          cooking_time?: string
+          created_at?: string
+          disliked_ingredients?: string[]
+          favorite_ingredients?: string[]
+          forbidden_ingredients?: string[]
+          goal?: string
+          has_oven?: boolean
+          id?: string
+          name?: string
+          photo_url?: string | null
+          sex?: Database["public"]["Enums"]["dog_sex"]
+          updated_at?: string
+          user_id?: string
+          weekly_budget?: number
+          weight?: number
+          weight_unit?: Database["public"]["Enums"]["weight_unit"]
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          recipe_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipe_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipe_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingredient_safety: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          note: string | null
+          safety: Database["public"]["Enums"]["safety_level"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          note?: string | null
+          safety?: Database["public"]["Enums"]["safety_level"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          note?: string | null
+          safety?: Database["public"]["Enums"]["safety_level"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_safety_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: true
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingredients: {
+        Row: {
+          category: Database["public"]["Enums"]["ingredient_category"]
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["ingredient_category"]
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["ingredient_category"]
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pantry_items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prepared_recipes: {
+        Row: {
+          dog_id: string | null
+          id: string
+          prepared_at: string
+          recipe_id: string
+          user_id: string
+        }
+        Insert: {
+          dog_id?: string | null
+          id?: string
+          prepared_at?: string
+          recipe_id: string
+          user_id: string
+        }
+        Update: {
+          dog_id?: string | null
+          id?: string
+          prepared_at?: string
+          recipe_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prepared_recipes_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "dogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepared_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          plan: Database["public"]["Enums"]["plan_id"]
+          trial_ends_at: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string
+          plan?: Database["public"]["Enums"]["plan_id"]
+          trial_ends_at?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          plan?: Database["public"]["Enums"]["plan_id"]
+          trial_ends_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string | null
+          name: string
+          quantity: number
+          recipe_id: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          name: string
+          quantity?: number
+          recipe_id: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          name?: string
+          quantity?: number
+          recipe_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          benefit: string
+          category: Database["public"]["Enums"]["recipe_category"]
+          created_at: string
+          id: string
+          image_url: string | null
+          minutes: number
+          needs_oven: boolean
+          published: boolean
+          servings: number
+          slug: string
+          steps: string[]
+          storage: string
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          benefit?: string
+          category?: Database["public"]["Enums"]["recipe_category"]
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          minutes?: number
+          needs_oven?: boolean
+          published?: boolean
+          servings?: number
+          slug: string
+          steps?: string[]
+          storage?: string
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          benefit?: string
+          category?: Database["public"]["Enums"]["recipe_category"]
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          minutes?: number
+          needs_oven?: boolean
+          published?: boolean
+          servings?: number
+          slug?: string
+          steps?: string[]
+          storage?: string
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
+      shopping_items: {
+        Row: {
+          category: Database["public"]["Enums"]["ingredient_category"]
+          created_at: string
+          id: string
+          list_id: string
+          name: string
+          owned: boolean
+          quantity: number
+          unit: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["ingredient_category"]
+          created_at?: string
+          id?: string
+          list_id: string
+          name: string
+          owned?: boolean
+          quantity?: number
+          unit?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["ingredient_category"]
+          created_at?: string
+          id?: string
+          list_id?: string
+          name?: string
+          owned?: boolean
+          quantity?: number
+          unit?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          week_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan: Database["public"]["Enums"]["plan_id"]
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["plan_id"]
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["plan_id"]
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_plans: {
+        Row: {
+          created_at: string
+          days: Json
+          dog_id: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          days?: Json
+          dog_id?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          week_start?: string
+        }
+        Update: {
+          created_at?: string
+          days?: Json
+          dog_id?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_plans_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "dogs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weight_records: {
+        Row: {
+          created_at: string
+          date: string
+          dog_id: string
+          id: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          dog_id: string
+          id?: string
+          user_id: string
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          dog_id?: string
+          id?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_records_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "dogs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      activity_level: "bajo" | "moderado" | "alto"
+      app_role: "admin" | "user"
+      chat_role: "user" | "assistant"
+      dog_sex: "macho" | "hembra"
+      ingredient_category:
+        | "proteina"
+        | "vegetal"
+        | "cereal"
+        | "fruta"
+        | "grasa"
+        | "suplemento"
+      plan_id: "trial" | "basico" | "familiar" | "premium"
+      recipe_category:
+        | "desayuno"
+        | "principal"
+        | "snack"
+        | "premio"
+        | "hidratacion"
+      safety_level: "seguro" | "moderacion" | "evitar"
+      weight_unit: "kg" | "lb"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +890,29 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      activity_level: ["bajo", "moderado", "alto"],
+      app_role: ["admin", "user"],
+      chat_role: ["user", "assistant"],
+      dog_sex: ["macho", "hembra"],
+      ingredient_category: [
+        "proteina",
+        "vegetal",
+        "cereal",
+        "fruta",
+        "grasa",
+        "suplemento",
+      ],
+      plan_id: ["trial", "basico", "familiar", "premium"],
+      recipe_category: [
+        "desayuno",
+        "principal",
+        "snack",
+        "premio",
+        "hidratacion",
+      ],
+      safety_level: ["seguro", "moderacion", "evitar"],
+      weight_unit: ["kg", "lb"],
+    },
   },
 } as const
