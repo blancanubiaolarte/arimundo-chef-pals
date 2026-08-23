@@ -7,6 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { RECIPES } from "./mock-data";
 import { TRIAL_DAYS, maxDogsFor } from "./plans";
 import type {
@@ -93,6 +96,11 @@ function buildShoppingFromPlan(plan: WeeklyPlanDay[], previous: ShoppingItem[]):
   return [...map.values()];
 }
 
+export interface AuthResult {
+  error?: string;
+  needsEmailConfirmation?: boolean;
+}
+
 interface AppContextValue extends PersistedState {
   hydrated: boolean;
   activeDog: Dog | null;
@@ -102,10 +110,10 @@ interface AppContextValue extends PersistedState {
   maxDogs: number;
   canAddDog: boolean;
   dailyRecipe: Recipe | null;
-  signUp: (name: string, email: string) => void;
-  signIn: (email: string) => void;
-  signInWithGoogle: () => void;
-  signOut: () => void;
+  signUp: (name: string, email: string, password: string) => Promise<AuthResult>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult>;
+  signOut: () => Promise<void>;
   choosePlan: (plan: PlanId) => void;
   addDog: (dog: Omit<Dog, "id" | "userId" | "createdAt">) => Dog;
   updateDog: (id: string, patch: Partial<Dog>) => void;
@@ -132,44 +140,87 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setState({ ...EMPTY, ...(JSON.parse(raw) as PersistedState) });
+      if (raw) setState({ ...EMPTY, ...(JSON.parse(raw) as PersistedState), user: null });
     } catch {
       /* estado inicial vacío */
     }
-    setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, user: null }));
   }, [state, hydrated]);
 
   const patch = useCallback((fn: (prev: PersistedState) => PersistedState) => {
     setState(fn);
   }, []);
 
-  const createSession = useCallback(
-    (name: string, email: string) => {
-      const now = new Date();
-      const trialEnd = new Date(now.getTime() + TRIAL_DAYS * 86400000);
+  // Sesión real de Lovable Cloud: perfil + rol se leen de la base de datos.
+  const loadProfile = useCallback(
+    async (session: Session | null) => {
+      if (!session?.user) {
+        setState((prev) => ({ ...prev, user: null }));
+        setHydrated(true);
+        return;
+      }
+      const authUser = session.user;
+      const [{ data: profile }, { data: roles }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("name, avatar_url, plan, trial_ends_at, created_at, email")
+          .eq("id", authUser.id)
+          .maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", authUser.id),
+      ]);
+
+      const trialEndsAt =
+        profile?.trial_ends_at ??
+        new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString();
+
       const user: AppUser = {
-        id: uid("user"),
-        email,
-        name,
-        role: email.trim().toLowerCase().startsWith("admin") ? "admin" : "user",
-        createdAt: now.toISOString(),
-        trialEndsAt: trialEnd.toISOString(),
-        plan: "trial",
+        id: authUser.id,
+        email: profile?.email ?? authUser.email ?? "",
+        name:
+          profile?.name ||
+          (authUser.user_metadata?.["name"] as string | undefined) ||
+          (authUser.email?.split("@")[0] ?? "Amigo"),
+        ...(profile?.avatar_url || authUser.user_metadata?.["avatar_url"]
+          ? {
+              avatarUrl: (profile?.avatar_url ??
+                authUser.user_metadata?.["avatar_url"]) as string,
+            }
+          : {}),
+        role: roles?.some((r) => r.role === "admin") ? "admin" : "user",
+        createdAt: profile?.created_at ?? authUser.created_at,
+        trialEndsAt,
+        plan: (profile?.plan ?? "trial") as PlanId,
       };
-      patch((prev) => ({
+
+      setState((prev) => ({
         ...prev,
         user,
         weeklyPlan: prev.weeklyPlan.length ? prev.weeklyPlan : buildWeeklyPlan(),
         dailyRecipeId: prev.dailyRecipeId ?? RECIPES[0]!.id,
       }));
+      setHydrated(true);
     },
-    [patch],
+    [],
   );
+
+  useEffect(() => {
+    let active = true;
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
+      if (active) void loadProfile(session);
+    });
+    void supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
+      if (active) void loadProfile(data.session);
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [loadProfile]);
+
 
   const value = useMemo<AppContextValue>(() => {
     const activeDog = state.dogs.find((d) => d.id === state.activeDogId) ?? state.dogs[0] ?? null;
@@ -191,10 +242,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       canAddDog: state.dogs.length < maxDogs,
       dailyRecipe: RECIPES.find((r) => r.id === state.dailyRecipeId) ?? RECIPES[0]!,
 
-      signUp: (name, email) => createSession(name, email),
-      signIn: (email) => createSession(email.split("@")[0] ?? "Amigo", email),
-      signInWithGoogle: () => createSession("Invitado Google", "google.user@arimundo.app"),
-      signOut: () => patch((prev) => ({ ...prev, user: null })),
+      signUp: async (name, email, password) => {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { name },
+          },
+        });
+        if (error) return { error: error.message };
+        return { needsEmailConfirmation: !data.session };
+      },
+      signIn: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        return error ? { error: error.message } : {};
+      },
+      signInWithGoogle: async () => {
+        try {
+          await lovable.auth.signInWithOAuth("google", {
+            redirect_uri: window.location.origin,
+          });
+          return {};
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : "No se pudo continuar con Google" };
+        }
+      },
+      signOut: async () => {
+        await supabase.auth.signOut();
+        setState((prev) => ({ ...prev, user: null }));
+      },
       choosePlan: (plan) =>
         patch((prev) => (prev.user ? { ...prev, user: { ...prev.user, plan } } : prev)),
 
@@ -334,7 +411,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           dogs: prev.dogs.map((d) => (d.id === dogId ? { ...d, weight } : d)),
         })),
     };
-  }, [state, hydrated, patch, createSession]);
+  }, [state, hydrated, patch]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
