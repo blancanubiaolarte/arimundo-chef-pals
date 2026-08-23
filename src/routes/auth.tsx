@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { useApp } from "@/lib/app-store";
 

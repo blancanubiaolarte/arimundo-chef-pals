@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { MailCheck } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
@@ -21,6 +22,8 @@ export const Route = createFileRoute("/auth/recuperar")({
 function RecoverPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
@@ -42,9 +45,16 @@ function RecoverPage() {
       ) : (
         <form
           className="space-y-3"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            setSent(true);
+            setError(null);
+            setLoading(true);
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: `${window.location.origin}/reset-password`,
+            });
+            setLoading(false);
+            if (resetError) setError(resetError.message);
+            else setSent(true);
           }}
         >
           <input
@@ -57,9 +67,10 @@ function RecoverPage() {
           />
           <button
             type="submit"
+            disabled={loading}
             className="w-full rounded-xl bg-brand py-3.5 text-sm font-extrabold text-primary-foreground shadow-soft"
           >
-            Enviar enlace
+            {loading ? "Enviando..." : "Enviar enlace"}
           </button>
         </form>
       )}
