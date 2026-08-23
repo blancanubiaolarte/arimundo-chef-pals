@@ -30,13 +30,16 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { signUp, signIn, signInWithGoogle, dogs } = useApp();
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { signUp, signIn, signInWithGoogle, user, dogs, hydrated } = useApp();
   const navigate = useNavigate();
 
-  const afterAuth = (isNew: boolean) => {
-    if (isNew || dogs.length === 0) navigate({ to: "/onboarding/perro", replace: true });
-    else navigate({ to: "/", replace: true });
-  };
+  useEffect(() => {
+    if (!hydrated || !user) return;
+    navigate({ to: dogs.length === 0 ? "/onboarding/perro" : "/", replace: true });
+  }, [hydrated, user, dogs.length, navigate]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-10">
@@ -58,7 +61,11 @@ function AuthPage() {
           <button
             key={value}
             type="button"
-            onClick={() => setMode(value)}
+            onClick={() => {
+              setMode(value);
+              setError(null);
+              setInfo(null);
+            }}
             className={`rounded-lg py-2 text-sm font-bold ${
               mode === value ? "bg-card shadow-soft" : "text-muted-foreground"
             }`}
@@ -68,17 +75,32 @@ function AuthPage() {
         ))}
       </div>
 
+      {error && (
+        <p className="mb-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">
+          {error}
+        </p>
+      )}
+      {info && (
+        <p className="mb-3 rounded-xl bg-success/10 px-3 py-2 text-xs font-bold text-success">
+          {info}
+        </p>
+      )}
+
       <form
         className="space-y-3"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (mode === "signup") {
-            signUp(name || email.split("@")[0] || "Amigo", email);
-            afterAuth(true);
-          } else {
-            signIn(email);
-            afterAuth(false);
-          }
+          setError(null);
+          setInfo(null);
+          setLoading(true);
+          const result =
+            mode === "signup"
+              ? await signUp(name || email.split("@")[0] || "Amigo", email, password)
+              : await signIn(email, password);
+          setLoading(false);
+          if (result.error) setError(result.error);
+          else if (result.needsEmailConfirmation)
+            setInfo("Revisa tu correo y confirma tu cuenta para empezar la prueba de 3 días.");
         }}
       >
         {mode === "signup" && (
@@ -108,17 +130,23 @@ function AuthPage() {
         />
         <button
           type="submit"
-          className="w-full rounded-xl bg-brand py-3.5 text-sm font-extrabold text-primary-foreground shadow-soft"
+          disabled={loading}
+          className="w-full rounded-xl bg-brand py-3.5 text-sm font-extrabold text-primary-foreground shadow-soft disabled:opacity-60"
         >
-          {mode === "signup" ? "Empezar prueba de 3 días" : "Entrar"}
+          {loading
+            ? "Un momento..."
+            : mode === "signup"
+              ? "Empezar prueba de 3 días"
+              : "Entrar"}
         </button>
       </form>
 
       <button
         type="button"
-        onClick={() => {
-          signInWithGoogle();
-          afterAuth(dogs.length === 0);
+        onClick={async () => {
+          setError(null);
+          const result = await signInWithGoogle();
+          if (result.error) setError(result.error);
         }}
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-input bg-card py-3.5 text-sm font-bold"
       >
@@ -139,6 +167,7 @@ function AuthPage() {
         </svg>
         Continuar con Google
       </button>
+
 
       <Link
         to="/auth/recuperar"
