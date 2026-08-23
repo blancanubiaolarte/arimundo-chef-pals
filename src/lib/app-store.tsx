@@ -184,8 +184,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           profile?.name ||
           (authUser.user_metadata?.["name"] as string | undefined) ||
           (authUser.email?.split("@")[0] ?? "Amigo"),
-        avatarUrl:
-          profile?.avatar_url ?? (authUser.user_metadata?.["avatar_url"] as string | undefined),
+        ...(profile?.avatar_url || authUser.user_metadata?.["avatar_url"]
+          ? {
+              avatarUrl: (profile?.avatar_url ??
+                authUser.user_metadata?.["avatar_url"]) as string,
+            }
+          : {}),
         role: roles?.some((r) => r.role === "admin") ? "admin" : "user",
         createdAt: profile?.created_at ?? authUser.created_at,
         trialEndsAt,
