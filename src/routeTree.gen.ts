@@ -16,6 +16,7 @@ import { Route as ChefRouteImport } from './routes/chef'
 import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanesRouteImport } from './routes/planes'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
 import { Route as OnboardingPerroRouteImport } from './routes/onboarding.perro'
 import { Route as PerrosIndexRouteImport } from './routes/perros.index'
@@ -58,6 +59,11 @@ const PlanesRoute = PlanesRouteImport.update({
   path: '/planes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRecuperarRoute = AuthRecuperarRouteImport.update({
   id: '/recuperar',
   path: '/recuperar',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
   '/planes': typeof PlanesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
   '/perros/$dogId': typeof PerrosDogIdRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
   '/planes': typeof PlanesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
   '/perros/$dogId': typeof PerrosDogIdRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
   '/planes': typeof PlanesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
   '/perros/$dogId': typeof PerrosDogIdRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/compras'
     | '/perfil'
     | '/planes'
+    | '/reset-password'
     | '/auth/recuperar'
     | '/onboarding/perro'
     | '/perros/$dogId'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/compras'
     | '/perfil'
     | '/planes'
+    | '/reset-password'
     | '/auth/recuperar'
     | '/onboarding/perro'
     | '/perros/$dogId'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/compras'
     | '/perfil'
     | '/planes'
+    | '/reset-password'
     | '/auth/recuperar'
     | '/onboarding/perro'
     | '/perros/$dogId'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   ComprasRoute: typeof ComprasRoute
   PerfilRoute: typeof PerfilRoute
   PlanesRoute: typeof PlanesRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   OnboardingPerroRoute: typeof OnboardingPerroRoute
   PerrosDogIdRoute: typeof PerrosDogIdRoute
   RecetasSlugRoute: typeof RecetasSlugRoute
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/planes'
       fullPath: '/planes'
       preLoaderRoute: typeof PlanesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/recuperar': {
@@ -312,6 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComprasRoute: ComprasRoute,
   PerfilRoute: PerfilRoute,
   PlanesRoute: PlanesRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   OnboardingPerroRoute: OnboardingPerroRoute,
   PerrosDogIdRoute: PerrosDogIdRoute,
   RecetasSlugRoute: RecetasSlugRoute,
