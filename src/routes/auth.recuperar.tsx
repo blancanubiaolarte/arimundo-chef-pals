@@ -65,6 +65,11 @@ function RecoverPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          {error && (
+            <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">
+              {error}
+            </p>
+          )}
           <button
             type="submit"
             disabled={loading}
