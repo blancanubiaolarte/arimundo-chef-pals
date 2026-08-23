@@ -7,6 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { RECIPES } from "./mock-data";
 import { TRIAL_DAYS, maxDogsFor } from "./plans";
 import type {
@@ -93,6 +96,11 @@ function buildShoppingFromPlan(plan: WeeklyPlanDay[], previous: ShoppingItem[]):
   return [...map.values()];
 }
 
+export interface AuthResult {
+  error?: string;
+  needsEmailConfirmation?: boolean;
+}
+
 interface AppContextValue extends PersistedState {
   hydrated: boolean;
   activeDog: Dog | null;
@@ -102,10 +110,10 @@ interface AppContextValue extends PersistedState {
   maxDogs: number;
   canAddDog: boolean;
   dailyRecipe: Recipe | null;
-  signUp: (name: string, email: string) => void;
-  signIn: (email: string) => void;
-  signInWithGoogle: () => void;
-  signOut: () => void;
+  signUp: (name: string, email: string, password: string) => Promise<AuthResult>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult>;
+  signOut: () => Promise<void>;
   choosePlan: (plan: PlanId) => void;
   addDog: (dog: Omit<Dog, "id" | "userId" | "createdAt">) => Dog;
   updateDog: (id: string, patch: Partial<Dog>) => void;
@@ -197,10 +205,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
       if (active) void loadProfile(session);
     });
-    void supabase.auth.getSession().then(({ data }) => {
+    void supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       if (active) void loadProfile(data.session);
     });
     return () => {
@@ -230,10 +238,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       canAddDog: state.dogs.length < maxDogs,
       dailyRecipe: RECIPES.find((r) => r.id === state.dailyRecipeId) ?? RECIPES[0]!,
 
-      signUp: (name, email) => createSession(name, email),
-      signIn: (email) => createSession(email.split("@")[0] ?? "Amigo", email),
-      signInWithGoogle: () => createSession("Invitado Google", "google.user@arimundo.app"),
-      signOut: () => patch((prev) => ({ ...prev, user: null })),
+      signUp: async (name, email, password) => {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { name },
+          },
+        });
+        if (error) return { error: error.message };
+        return { needsEmailConfirmation: !data.session };
+      },
+      signIn: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        return error ? { error: error.message } : {};
+      },
+      signInWithGoogle: async () => {
+        try {
+          await lovable.auth.signInWithOAuth("google", {
+            redirect_uri: window.location.origin,
+          });
+          return {};
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : "No se pudo continuar con Google" };
+        }
+      },
+      signOut: async () => {
+        await supabase.auth.signOut();
+        setState((prev) => ({ ...prev, user: null }));
+      },
       choosePlan: (plan) =>
         patch((prev) => (prev.user ? { ...prev, user: { ...prev.user, plan } } : prev)),
 
@@ -373,7 +407,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           dogs: prev.dogs.map((d) => (d.id === dogId ? { ...d, weight } : d)),
         })),
     };
-  }, [state, hydrated, patch, createSession]);
+  }, [state, hydrated, patch]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
