@@ -132,44 +132,83 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setState({ ...EMPTY, ...(JSON.parse(raw) as PersistedState) });
+      if (raw) setState({ ...EMPTY, ...(JSON.parse(raw) as PersistedState), user: null });
     } catch {
       /* estado inicial vacío */
     }
-    setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, user: null }));
   }, [state, hydrated]);
 
   const patch = useCallback((fn: (prev: PersistedState) => PersistedState) => {
     setState(fn);
   }, []);
 
-  const createSession = useCallback(
-    (name: string, email: string) => {
-      const now = new Date();
-      const trialEnd = new Date(now.getTime() + TRIAL_DAYS * 86400000);
+  // Sesión real de Lovable Cloud: perfil + rol se leen de la base de datos.
+  const loadProfile = useCallback(
+    async (session: Session | null) => {
+      if (!session?.user) {
+        setState((prev) => ({ ...prev, user: null }));
+        setHydrated(true);
+        return;
+      }
+      const authUser = session.user;
+      const [{ data: profile }, { data: roles }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("name, avatar_url, plan, trial_ends_at, created_at, email")
+          .eq("id", authUser.id)
+          .maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", authUser.id),
+      ]);
+
+      const trialEndsAt =
+        profile?.trial_ends_at ??
+        new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString();
+
       const user: AppUser = {
-        id: uid("user"),
-        email,
-        name,
-        role: email.trim().toLowerCase().startsWith("admin") ? "admin" : "user",
-        createdAt: now.toISOString(),
-        trialEndsAt: trialEnd.toISOString(),
-        plan: "trial",
+        id: authUser.id,
+        email: profile?.email ?? authUser.email ?? "",
+        name:
+          profile?.name ||
+          (authUser.user_metadata?.["name"] as string | undefined) ||
+          (authUser.email?.split("@")[0] ?? "Amigo"),
+        avatarUrl:
+          profile?.avatar_url ?? (authUser.user_metadata?.["avatar_url"] as string | undefined),
+        role: roles?.some((r) => r.role === "admin") ? "admin" : "user",
+        createdAt: profile?.created_at ?? authUser.created_at,
+        trialEndsAt,
+        plan: (profile?.plan ?? "trial") as PlanId,
       };
-      patch((prev) => ({
+
+      setState((prev) => ({
         ...prev,
         user,
         weeklyPlan: prev.weeklyPlan.length ? prev.weeklyPlan : buildWeeklyPlan(),
         dailyRecipeId: prev.dailyRecipeId ?? RECIPES[0]!.id,
       }));
+      setHydrated(true);
     },
-    [patch],
+    [],
   );
+
+  useEffect(() => {
+    let active = true;
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active) void loadProfile(session);
+    });
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active) void loadProfile(data.session);
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [loadProfile]);
+
 
   const value = useMemo<AppContextValue>(() => {
     const activeDog = state.dogs.find((d) => d.id === state.activeDogId) ?? state.dogs[0] ?? null;
