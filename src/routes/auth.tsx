@@ -131,15 +131,23 @@ function AuthPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-brand py-3.5 text-sm font-extrabold text-primary-foreground shadow-soft disabled:opacity-60"
+          className="w-full rounded-xl bg-brand py-3.5 text-sm font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.97] disabled:opacity-60"
         >
-          {loading
-            ? "Un momento..."
-            : mode === "signup"
-              ? "Empezar prueba de 3 días"
-              : "Entrar"}
+          {loading ? "Un momento..." : mode === "signup" ? "Comenzar gratis" : "Entrar"}
         </button>
+        {mode === "signup" && (
+          <div className="space-y-1 pt-0.5 text-center">
+            <p className="text-xs font-bold text-foreground/80">
+              ✨ 3 días gratis · Sin tarjeta de crédito
+            </p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Cancela cuando quieras. Conservaremos la información de tu perro durante el período
+              de prueba.
+            </p>
+          </div>
+        )}
       </form>
+
 
       <button
         type="button"
