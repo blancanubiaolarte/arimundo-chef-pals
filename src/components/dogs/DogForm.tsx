@@ -100,9 +100,12 @@ export function DogForm({
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) set("photoUrl", URL.createObjectURL(file));
+                  if (!file) return;
+                  set("photoUrl", URL.createObjectURL(file));
+                  const url = await uploadDogPhoto(file);
+                  if (url) set("photoUrl", url);
                 }}
               />
             </label>
