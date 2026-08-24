@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BienestarRouteImport } from './routes/bienestar'
 import { Route as ChefRouteImport } from './routes/chef'
 import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as PerfilRouteImport } from './routes/perfil'
@@ -38,6 +39,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BienestarRoute = BienestarRouteImport.update({
+  id: '/bienestar',
+  path: '/bienestar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChefRoute = ChefRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
+  '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
+  '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
+  '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/bienestar'
     | '/chef'
     | '/compras'
     | '/perfil'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/bienestar'
     | '/chef'
     | '/compras'
     | '/perfil'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/bienestar'
     | '/chef'
     | '/compras'
     | '/perfil'
@@ -211,6 +223,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRouteWithChildren
+  BienestarRoute: typeof BienestarRoute
   ChefRoute: typeof ChefRoute
   ComprasRoute: typeof ComprasRoute
   PerfilRoute: typeof PerfilRoute
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bienestar': {
+      id: '/bienestar'
+      path: '/bienestar'
+      fullPath: '/bienestar'
+      preLoaderRoute: typeof BienestarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chef': {
@@ -348,6 +368,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRouteWithChildren,
+  BienestarRoute: BienestarRoute,
   ChefRoute: ChefRoute,
   ComprasRoute: ComprasRoute,
   PerfilRoute: PerfilRoute,

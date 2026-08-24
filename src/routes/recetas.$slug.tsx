@@ -190,6 +190,8 @@ function RecipeDetail() {
   const [checkedIngredients, setCheckedIngredients] = useState<string[]>([]);
   const [cartPulse, setCartPulse] = useState(false);
   const [favPulse, setFavPulse] = useState(false);
+  const [ratingFor, setRatingFor] = useState<string | null>(null);
+  const [rating, setRating] = useState(0);
 
   useEffect(() => {
     setSteps([]);
@@ -426,10 +428,7 @@ function RecipeDetail() {
               <p className="text-sm opacity-90">Has preparado esta receta para tu perro.</p>
               <button
                 type="button"
-                onClick={() => {
-                  markPrepared(recipe.id);
-                  void navigate({ to: "/" });
-                }}
+                onClick={() => setRatingFor(markPrepared(recipe.id))}
                 className="mt-4 w-full rounded-2xl bg-card py-4 text-base font-extrabold text-foreground shadow-soft transition-transform active:scale-[0.97]"
               >
                 ✅ Marcar receta como preparada
