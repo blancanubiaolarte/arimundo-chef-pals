@@ -119,18 +119,15 @@ function ProfilePage() {
         )}
 
         <section className="divide-y divide-border/60 overflow-hidden rounded-2xl bg-card shadow-soft">
-          <div className="flex items-center gap-3 p-4 text-sm">
-            <Bell className="size-4 text-wood" /> Notificaciones de la receta del día
-            <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold">
-              Próximamente
-            </span>
-          </div>
-          <div className="flex items-center gap-3 p-4 text-sm">
-            <Award className="size-4 text-wood" /> Logros
-            <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold">
-              Próximamente
-            </span>
-          </div>
+          <Link to="/bienestar" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <Bell className="size-4 text-wood" /> Recordatorios y notificaciones
+          </Link>
+          <Link to="/bienestar" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <Award className="size-4 text-wood" /> Logros e insignias
+          </Link>
+          <Link to="/bienestar" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <TrendingUp className="size-4 text-wood" /> 🐶 Bienestar · diario de tu perro
+          </Link>
           <Link to="/admin" className="flex items-center gap-3 p-4 text-sm font-semibold">
             <Shield className="size-4 text-wood" /> Panel administrativo
           </Link>
