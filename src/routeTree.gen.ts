@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChefRouteImport } from './routes/chef'
 import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PlanSemanalRouteImport } from './routes/plan-semanal'
 import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
@@ -52,6 +53,11 @@ const ComprasRoute = ComprasRouteImport.update({
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanSemanalRoute = PlanSemanalRouteImport.update({
+  id: '/plan-semanal',
+  path: '/plan-semanal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlanesRoute = PlanesRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
+  '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
+  '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
   '/perfil': typeof PerfilRoute
+  '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/chef'
     | '/compras'
     | '/perfil'
+    | '/plan-semanal'
     | '/planes'
     | '/reset-password'
     | '/auth/recuperar'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/chef'
     | '/compras'
     | '/perfil'
+    | '/plan-semanal'
     | '/planes'
     | '/reset-password'
     | '/auth/recuperar'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/chef'
     | '/compras'
     | '/perfil'
+    | '/plan-semanal'
     | '/planes'
     | '/reset-password'
     | '/auth/recuperar'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   ChefRoute: typeof ChefRoute
   ComprasRoute: typeof ComprasRoute
   PerfilRoute: typeof PerfilRoute
+  PlanSemanalRoute: typeof PlanSemanalRoute
   PlanesRoute: typeof PlanesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   OnboardingPerroRoute: typeof OnboardingPerroRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan-semanal': {
+      id: '/plan-semanal'
+      path: '/plan-semanal'
+      fullPath: '/plan-semanal'
+      preLoaderRoute: typeof PlanSemanalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/planes': {
@@ -331,6 +351,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChefRoute: ChefRoute,
   ComprasRoute: ComprasRoute,
   PerfilRoute: PerfilRoute,
+  PlanSemanalRoute: PlanSemanalRoute,
   PlanesRoute: PlanesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   OnboardingPerroRoute: OnboardingPerroRoute,

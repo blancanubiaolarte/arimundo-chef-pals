@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { RefreshCw, Plus, Search } from "lucide-react";
+import { RefreshCw, Plus, Search, Check } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { AuthGate } from "@/components/common/AuthGate";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { useApp } from "@/lib/app-store";
 import { INGREDIENTS, RECIPES } from "@/lib/mock-data";
+import { isSafeFor } from "@/lib/planner";
 
 export const Route = createFileRoute("/compras")({
   head: () => ({
@@ -30,8 +31,16 @@ export const Route = createFileRoute("/compras")({
 const TIME_FILTERS = [5, 10, 20] as const;
 
 function ShoppingPage() {
-  const { shopping, regenerateShopping, toggleShoppingOwned, pantry, togglePantry, favorites } =
-    useApp();
+  const {
+    shopping,
+    generateWeeklyMenu,
+    toggleShoppingOwned,
+    toggleShoppingBought,
+    pantry,
+    togglePantry,
+    favorites,
+    activeDog,
+  } = useApp();
   const [tab, setTab] = useState<"lista" | "despensa">("lista");
   const [search, setSearch] = useState(false);
   const [maxTime, setMaxTime] = useState<number | null>(null);
@@ -39,18 +48,22 @@ function ShoppingPage() {
   const [onlyFav, setOnlyFav] = useState(false);
   const [few, setFew] = useState(false);
 
-  const pending = shopping.filter((i) => !i.owned);
-  const owned = shopping.filter((i) => i.owned);
+  const resolved = shopping.filter((i) => i.owned || i.bought);
+  const pending = shopping.filter((i) => !i.owned && !i.bought);
+  const progress = shopping.length
+    ? Math.round((resolved.length / shopping.length) * 100)
+    : 0;
 
   const compatible = useMemo(
     () =>
       RECIPES.filter((r) => r.published)
+        .filter((r) => isSafeFor(r, activeDog))
         .filter((r) => r.ingredients.some((i) => pantry.includes(i.name)))
         .filter((r) => (maxTime ? r.minutes <= maxTime : true))
         .filter((r) => (noOven ? !r.needsOven : true))
         .filter((r) => (onlyFav ? favorites.includes(r.id) : true))
         .filter((r) => (few ? r.ingredients.length <= 3 : true)),
-    [pantry, maxTime, noOven, onlyFav, few, favorites],
+    [pantry, maxTime, noOven, onlyFav, few, favorites, activeDog],
   );
 
   const chip = (active: boolean) =>
@@ -85,10 +98,10 @@ function ShoppingPage() {
           <>
             <button
               type="button"
-              onClick={regenerateShopping}
+              onClick={generateWeeklyMenu}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-sm font-extrabold text-primary-foreground shadow-soft"
             >
-              <RefreshCw className="size-4" /> Generar lista de la semana
+              <RefreshCw className="size-4" /> ✨ Generar menú y lista de la semana
             </button>
 
             {shopping.length === 0 ? (
@@ -98,46 +111,85 @@ function ShoppingPage() {
             ) : (
               <>
                 <section className="rounded-2xl bg-card p-4 shadow-soft">
+                  <div className="flex items-center justify-between">
+                    <p className="font-display text-sm font-extrabold">Avance de la compra</p>
+                    <span className="text-xs font-extrabold text-wood">{progress}%</span>
+                  </div>
+                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-brand transition-all duration-500 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {resolved.length} de {shopping.length} ingredientes resueltos.
+                  </p>
+                </section>
+
+                <section className="rounded-2xl bg-card p-4 shadow-soft">
                   <h2 className="font-display text-base font-extrabold">
                     Por comprar ({pending.length})
                   </h2>
-                  <ul className="mt-2 divide-y divide-border/60">
-                    {pending.map((item) => (
-                      <li key={item.id} className="flex items-center gap-3 py-2.5">
-                        <input
-                          type="checkbox"
-                          className="size-5 accent-[oklch(0.82_0.166_84)]"
-                          checked={false}
-                          onChange={() => toggleShoppingOwned(item.id)}
-                          aria-label={`Ya tengo ${item.name}`}
-                        />
-                        <span className="flex-1 text-sm">{item.name}</span>
-                        <span className="text-xs font-bold text-muted-foreground">
-                          {item.quantity} {item.unit}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  {pending.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      🎉 ¡Lista completa! Ya tienes todo para la semana.
+                    </p>
+                  ) : (
+                    <ul className="mt-2 divide-y divide-border/60">
+                      {pending.map((item) => (
+                        <li
+                          key={item.id}
+                          className="animate-in fade-in flex items-center gap-2 py-2.5 duration-200"
+                        >
+                          <span className="flex-1 text-sm">{item.name}</span>
+                          <span className="text-xs font-bold text-muted-foreground">
+                            {item.quantity} {item.unit}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleShoppingBought(item.id)}
+                            className="rounded-full bg-muted px-2.5 py-1.5 text-[11px] font-bold transition-transform active:scale-95"
+                          >
+                            ✔ Ya lo compré
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleShoppingOwned(item.id)}
+                            className="rounded-full bg-muted px-2.5 py-1.5 text-[11px] font-bold transition-transform active:scale-95"
+                          >
+                            ✔ Ya lo tengo
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </section>
 
-                {owned.length > 0 && (
+                {resolved.length > 0 && (
                   <section className="rounded-2xl bg-card p-4 shadow-soft">
                     <h2 className="font-display text-base font-extrabold">
-                      Ya lo tengo ({owned.length})
+                      Resueltos ({resolved.length})
                     </h2>
                     <ul className="mt-2 divide-y divide-border/60">
-                      {owned.map((item) => (
+                      {resolved.map((item) => (
                         <li key={item.id} className="flex items-center gap-3 py-2.5">
-                          <input
-                            type="checkbox"
-                            className="size-5 accent-[oklch(0.82_0.166_84)]"
-                            checked
-                            onChange={() => toggleShoppingOwned(item.id)}
-                            aria-label={`Quitar ${item.name} de lo que ya tengo`}
-                          />
+                          <span className="flex size-5 items-center justify-center rounded-full bg-success text-success-foreground">
+                            <Check className="size-3" />
+                          </span>
                           <span className="flex-1 text-sm text-muted-foreground line-through">
                             {item.name}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              item.bought
+                                ? toggleShoppingBought(item.id)
+                                : toggleShoppingOwned(item.id)
+                            }
+                            className="text-[11px] font-bold text-wood underline"
+                          >
+                            Deshacer
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -148,6 +200,7 @@ function ShoppingPage() {
           </>
         ) : (
           <>
+            <h2 className="font-display text-base font-extrabold">Mi despensa</h2>
             <p className="text-sm text-muted-foreground">
               Marca lo que tienes en casa y busca recetas que puedas preparar ahora mismo.
             </p>
@@ -174,7 +227,7 @@ function ShoppingPage() {
               onClick={() => setSearch(true)}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-sm font-extrabold text-primary-foreground shadow-soft"
             >
-              <Search className="size-4" /> Buscar recetas
+              <Search className="size-4" /> Buscar recetas con mis ingredientes
             </button>
 
             {search && (

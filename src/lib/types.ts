@@ -110,12 +110,22 @@ export interface ShoppingItem {
   quantity: number;
   unit: string;
   category: IngredientCategory;
+  /** Ya lo tengo en casa */
   owned: boolean;
+  /** Ya lo compré */
+  bought?: boolean;
 }
 
 export interface WeeklyPlanDay {
   day: string;
   recipeId: UUID;
+}
+
+export interface PreparedLogEntry {
+  id: UUID;
+  recipeId: UUID;
+  dogId?: UUID;
+  date: string;
 }
 
 export interface ChatMessage {
