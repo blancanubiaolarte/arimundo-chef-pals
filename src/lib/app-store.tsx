@@ -11,11 +11,13 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { RECIPES } from "./mock-data";
+import { buildShoppingList, generateWeek, streakFromLog } from "./planner";
 import { TRIAL_DAYS, maxDogsFor } from "./plans";
 import type {
   AppUser,
   ChatMessage,
   Dog,
+  PreparedLogEntry,
   PlanId,
   Recipe,
   ShoppingItem,
@@ -45,6 +47,7 @@ interface PersistedState {
   chat: ChatMessage[];
   weights: WeightRecord[];
   dailyRecipeId: string | null;
+  preparedLog: PreparedLogEntry[];
 }
 
 const EMPTY: PersistedState = {
@@ -59,6 +62,7 @@ const EMPTY: PersistedState = {
   chat: [],
   weights: [],
   dailyRecipeId: null,
+  preparedLog: [],
 };
 
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -110,6 +114,7 @@ interface AppContextValue extends PersistedState {
   maxDogs: number;
   canAddDog: boolean;
   dailyRecipe: Recipe | null;
+  streak: number;
   signUp: (name: string, email: string, password: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult>;
@@ -121,6 +126,11 @@ interface AppContextValue extends PersistedState {
   setActiveDog: (id: string) => void;
   toggleFavorite: (recipeId: string) => void;
   togglePrepared: (recipeId: string) => void;
+  markPrepared: (recipeId: string) => void;
+  generateWeeklyMenu: () => void;
+  replacePlanDay: (day: string, recipeId: string) => void;
+  toggleShoppingBought: (id: string) => void;
+  addIngredientsToShopping: (recipeId: string) => void;
   shuffleDailyRecipe: () => void;
   regenerateShopping: () => void;
   toggleShoppingOwned: (id: string) => void;
@@ -241,6 +251,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       maxDogs,
       canAddDog: state.dogs.length < maxDogs,
       dailyRecipe: RECIPES.find((r) => r.id === state.dailyRecipeId) ?? RECIPES[0]!,
+      streak: streakFromLog(state.preparedLog.map((p) => p.date)),
 
       signUp: async (name, email, password) => {
         const { data, error } = await supabase.auth.signUp({
@@ -316,6 +327,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? prev.prepared.filter((f) => f !== recipeId)
             : [...prev.prepared, recipeId],
         })),
+      markPrepared: (recipeId) =>
+        patch((prev) => ({
+          ...prev,
+          prepared: prev.prepared.includes(recipeId)
+            ? prev.prepared
+            : [...prev.prepared, recipeId],
+          preparedLog: [
+            ...prev.preparedLog,
+            {
+              id: uid("prep"),
+              recipeId,
+              ...(prev.activeDogId ? { dogId: prev.activeDogId } : {}),
+              date: new Date().toISOString(),
+            },
+          ],
+        })),
+      generateWeeklyMenu: () =>
+        patch((prev) => {
+          const dog = prev.dogs.find((d) => d.id === prev.activeDogId) ?? prev.dogs[0] ?? null;
+          const plan = generateWeek(dog, Math.floor(Math.random() * 7));
+          return { ...prev, weeklyPlan: plan, shopping: buildShoppingList(plan, prev.shopping) };
+        }),
+      replacePlanDay: (day, recipeId) =>
+        patch((prev) => {
+          const plan = prev.weeklyPlan.map((d) => (d.day === day ? { ...d, recipeId } : d));
+          return { ...prev, weeklyPlan: plan, shopping: buildShoppingList(plan, prev.shopping) };
+        }),
+      toggleShoppingBought: (id) =>
+        patch((prev) => ({
+          ...prev,
+          shopping: prev.shopping.map((i) => (i.id === id ? { ...i, bought: !i.bought } : i)),
+        })),
+      addIngredientsToShopping: (recipeId) =>
+        patch((prev) => {
+          const recipe = RECIPES.find((r) => r.id === recipeId);
+          if (!recipe) return prev;
+          const items = prev.shopping.map((i) => ({ ...i }));
+          for (const ing of recipe.ingredients) {
+            const found = items.find((i) => i.id === ing.ingredientId);
+            if (found) found.quantity += ing.quantity;
+            else
+              items.push({
+                id: ing.ingredientId,
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                category: "proteina",
+                owned: false,
+                bought: false,
+              });
+          }
+          return { ...prev, shopping: items };
+        }),
       shuffleDailyRecipe: () =>
         patch((prev) => {
           const pool = RECIPES.filter((r) => r.published && r.id !== prev.dailyRecipeId);
@@ -325,8 +389,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       regenerateShopping: () =>
         patch((prev) => {
-          const plan = prev.weeklyPlan.length ? prev.weeklyPlan : buildWeeklyPlan();
-          return { ...prev, weeklyPlan: plan, shopping: buildShoppingFromPlan(plan, prev.shopping) };
+          const dog = prev.dogs.find((d) => d.id === prev.activeDogId) ?? prev.dogs[0] ?? null;
+          const plan = prev.weeklyPlan.length ? prev.weeklyPlan : generateWeek(dog);
+          return { ...prev, weeklyPlan: plan, shopping: buildShoppingList(plan, prev.shopping) };
         }),
       toggleShoppingOwned: (id) =>
         patch((prev) => ({
