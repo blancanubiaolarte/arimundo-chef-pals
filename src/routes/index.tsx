@@ -48,7 +48,7 @@ export const Route = createFileRoute("/")({
 });
 
 const SECTIONS = [
-  { to: "/recetas", label: "Plan semanal", icon: CalendarDays, hint: "7 días listos" },
+  { to: "/plan-semanal", label: "Plan semanal", icon: CalendarDays, hint: "7 días listos" },
   { to: "/compras", label: "Lista de compras", icon: ShoppingBasket, hint: "Ingredientes agrupados" },
   { to: "/recetas", label: "Favoritos", icon: Heart, hint: "Tus recetas guardadas" },
   { to: "/perfil", label: "Progreso", icon: TrendingUp, hint: "Peso y logros" },
@@ -199,6 +199,7 @@ function Dashboard() {
     favorites,
     prepared,
     weights,
+    streak,
     togglePrepared,
     sendChatMessage,
   } = useApp();
@@ -211,7 +212,6 @@ function Dashboard() {
     [dailyRecipe, activeDog],
   );
 
-  const streak = Math.min(prepared.length, 7);
   const isPrepared = dailyRecipe ? prepared.includes(dailyRecipe.id) : false;
 
   if (!hydrated) {
@@ -340,6 +340,24 @@ function Dashboard() {
             </div>
           </section>
         )}
+
+        <Link
+          to="/plan-semanal"
+          className="animate-in fade-in slide-in-from-bottom-2 flex items-center gap-3 rounded-3xl bg-wood-gradient p-4 text-wood-foreground shadow-card transition-transform duration-500 active:scale-[0.98]"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-xl">
+            ✨
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-base font-extrabold">
+              Crear mi menú semanal
+            </span>
+            <span className="block text-[11px] opacity-90">
+              7 días sin repetir, según el perfil de {activeDog?.name ?? "tu perro"}
+            </span>
+          </span>
+          <CalendarDays className="size-5 shrink-0" />
+        </Link>
 
         <section className="rounded-3xl bg-card p-4 shadow-card">
           <div className="mb-3 flex items-center gap-2">
