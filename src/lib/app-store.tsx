@@ -76,29 +76,8 @@ function buildWeeklyPlan(): WeeklyPlanDay[] {
   return DAYS.map((day, i) => ({ day, recipeId: published[i % published.length]!.id }));
 }
 
-function buildShoppingFromPlan(plan: WeeklyPlanDay[], previous: ShoppingItem[]): ShoppingItem[] {
-  const map = new Map<string, ShoppingItem>();
-  for (const day of plan) {
-    const recipe = RECIPES.find((r) => r.id === day.recipeId);
-    if (!recipe) continue;
-    for (const ing of recipe.ingredients) {
-      const existing = map.get(ing.ingredientId);
-      if (existing) {
-        existing.quantity += ing.quantity;
-      } else {
-        map.set(ing.ingredientId, {
-          id: ing.ingredientId,
-          name: ing.name,
-          quantity: ing.quantity,
-          unit: ing.unit,
-          category: "proteina",
-          owned: previous.find((p) => p.id === ing.ingredientId)?.owned ?? false,
-        });
-      }
-    }
-  }
-  return [...map.values()];
-}
+
+
 
 export interface AuthResult {
   error?: string;
