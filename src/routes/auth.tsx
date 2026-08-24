@@ -185,8 +185,9 @@ function AuthPage() {
       </Link>
 
       <p className="mt-6 text-center text-[11px] text-muted-foreground">
-        3 días de prueba gratuita. Sin tarjeta de crédito.
+        Tus datos están protegidos y solo se usan para personalizar las recetas.
       </p>
+
     </div>
   );
 }
