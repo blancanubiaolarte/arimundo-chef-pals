@@ -342,21 +342,42 @@ export type Database = {
       }
       pantry_items: {
         Row: {
+          category: Database["public"]["Enums"]["ingredient_category"]
           created_at: string
+          expires_at: string | null
           id: string
           name: string
+          notes: string | null
+          purchased_at: string | null
+          quantity: number
+          status: Database["public"]["Enums"]["pantry_status"]
+          unit: string
           user_id: string
         }
         Insert: {
+          category?: Database["public"]["Enums"]["ingredient_category"]
           created_at?: string
+          expires_at?: string | null
           id?: string
           name: string
+          notes?: string | null
+          purchased_at?: string | null
+          quantity?: number
+          status?: Database["public"]["Enums"]["pantry_status"]
+          unit?: string
           user_id: string
         }
         Update: {
+          category?: Database["public"]["Enums"]["ingredient_category"]
           created_at?: string
+          expires_at?: string | null
           id?: string
           name?: string
+          notes?: string | null
+          purchased_at?: string | null
+          quantity?: number
+          status?: Database["public"]["Enums"]["pantry_status"]
+          unit?: string
           user_id?: string
         }
         Relationships: []
@@ -365,22 +386,31 @@ export type Database = {
         Row: {
           dog_id: string | null
           id: string
+          notes: string | null
           prepared_at: string
+          rating: number | null
           recipe_id: string
+          used_pantry: boolean
           user_id: string
         }
         Insert: {
           dog_id?: string | null
           id?: string
+          notes?: string | null
           prepared_at?: string
+          rating?: number | null
           recipe_id: string
+          used_pantry?: boolean
           user_id: string
         }
         Update: {
           dog_id?: string | null
           id?: string
+          notes?: string | null
           prepared_at?: string
+          rating?: number | null
           recipe_id?: string
+          used_pantry?: boolean
           user_id?: string
         }
         Relationships: [
@@ -532,8 +562,36 @@ export type Database = {
         }
         Relationships: []
       }
+      reminders: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          key: Database["public"]["Enums"]["reminder_key"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          key: Database["public"]["Enums"]["reminder_key"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          key?: Database["public"]["Enums"]["reminder_key"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shopping_items: {
         Row: {
+          bought: boolean
           category: Database["public"]["Enums"]["ingredient_category"]
           created_at: string
           id: string
@@ -545,6 +603,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bought?: boolean
           category?: Database["public"]["Enums"]["ingredient_category"]
           created_at?: string
           id?: string
@@ -556,6 +615,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bought?: boolean
           category?: Database["public"]["Enums"]["ingredient_category"]
           created_at?: string
           id?: string
@@ -701,6 +761,7 @@ export type Database = {
           date: string
           dog_id: string
           id: string
+          note: string | null
           user_id: string
           weight: number
         }
@@ -709,6 +770,7 @@ export type Database = {
           date?: string
           dog_id: string
           id?: string
+          note?: string | null
           user_id: string
           weight: number
         }
@@ -717,6 +779,7 @@ export type Database = {
           date?: string
           dog_id?: string
           id?: string
+          note?: string | null
           user_id?: string
           weight?: number
         }
@@ -755,6 +818,7 @@ export type Database = {
         | "fruta"
         | "grasa"
         | "suplemento"
+      pantry_status: "disponible" | "poco" | "consumido"
       plan_id: "trial" | "basico" | "familiar" | "premium"
       recipe_category:
         | "desayuno"
@@ -762,6 +826,7 @@ export type Database = {
         | "snack"
         | "premio"
         | "hidratacion"
+      reminder_key: "comida" | "cocinar" | "pesar" | "compras" | "recetaDelDia"
       safety_level: "seguro" | "moderacion" | "evitar"
       weight_unit: "kg" | "lb"
     }
@@ -903,6 +968,7 @@ export const Constants = {
         "grasa",
         "suplemento",
       ],
+      pantry_status: ["disponible", "poco", "consumido"],
       plan_id: ["trial", "basico", "familiar", "premium"],
       recipe_category: [
         "desayuno",
@@ -911,6 +977,7 @@ export const Constants = {
         "premio",
         "hidratacion",
       ],
+      reminder_key: ["comida", "cocinar", "pesar", "compras", "recetaDelDia"],
       safety_level: ["seguro", "moderacion", "evitar"],
       weight_unit: ["kg", "lb"],
     },

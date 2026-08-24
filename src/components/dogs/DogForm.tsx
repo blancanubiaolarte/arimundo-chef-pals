@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Camera } from "lucide-react";
+import { useApp } from "@/lib/app-store";
 import type { ActivityLevel, CookingTime, Dog, Sex, WeightUnit } from "@/lib/types";
 
 export type DogFormValues = Omit<Dog, "id" | "userId" | "createdAt">;
@@ -55,6 +56,7 @@ export function DogForm({
 }) {
   const [values, setValues] = useState<DogFormValues>({ ...EMPTY, ...initial });
   const [step, setStep] = useState(0);
+  const { uploadDogPhoto } = useApp();
   const set = <K extends keyof DogFormValues>(key: K, v: DogFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: v }));
 
@@ -100,9 +102,12 @@ export function DogForm({
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) set("photoUrl", URL.createObjectURL(file));
+                  if (!file) return;
+                  set("photoUrl", URL.createObjectURL(file));
+                  const url = await uploadDogPhoto(file);
+                  if (url) set("photoUrl", url);
                 }}
               />
             </label>
