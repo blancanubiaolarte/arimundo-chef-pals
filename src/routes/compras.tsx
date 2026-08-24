@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { RefreshCw, Plus, Search, Check } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -200,6 +200,19 @@ function ShoppingPage() {
           </>
         ) : (
           <>
+            <Link
+              to="/alacena"
+              className="flex items-center justify-between gap-2 rounded-2xl bg-card p-4 shadow-soft transition-transform active:scale-[0.98]"
+            >
+              <span>
+                <span className="block font-display text-sm font-extrabold">🏠 Mi Alacena</span>
+                <span className="block text-xs text-muted-foreground">
+                  Cantidades, vencimientos y recetas con lo que ya tienes.
+                </span>
+              </span>
+              <span className="text-lg">→</span>
+            </Link>
+
             <h2 className="font-display text-base font-extrabold">Mi despensa</h2>
             <p className="text-sm text-muted-foreground">
               Marca lo que tienes en casa y busca recetas que puedas preparar ahora mismo.

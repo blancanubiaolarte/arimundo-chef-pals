@@ -27,10 +27,27 @@ export const Route = createFileRoute("/chef")({
   ),
 });
 
+function PantryHint() {
+  const { pantry } = useApp();
+  if (pantry.length === 0) {
+    return (
+      <Link to="/alacena" className="block text-xs font-bold text-wood underline">
+        🏠 Registra tu alacena y el Chef IA usará esos ingredientes
+      </Link>
+    );
+  }
+  return (
+    <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
+      🏠 Estoy considerando tu alacena: <strong>{pantry.slice(0, 5).join(", ")}</strong>
+    </p>
+  );
+}
+
 const SUGGESTIONS = [
   "Tengo pollo, avena y zanahoria",
   "Algo sin horno en 10 minutos",
   "Un premio con calabaza",
+  "¿Qué puedo preparar hoy?",
 ];
 
 function ChefPage() {
@@ -57,6 +74,7 @@ function ChefPage() {
               El Chef IA busca primero en la biblioteca de recetas de ARIMUNDO y evita los
               ingredientes prohibidos y las alergias de tu perro.
             </p>
+            <PantryHint />
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((s) => (
                 <button

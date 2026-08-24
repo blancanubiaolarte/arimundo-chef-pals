@@ -25,7 +25,6 @@ import {
   expiringSoon,
   expiryLabel,
   guessCategory,
-  matchRecipe,
   matchesForPantry,
   pantryStats,
   suggestIngredients,
@@ -623,5 +622,3 @@ function PantrySkeleton() {
     </AppShell>
   );
 }
-
-export { matchRecipe };
