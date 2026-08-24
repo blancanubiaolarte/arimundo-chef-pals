@@ -233,3 +233,12 @@ export const CATEGORY_LABEL: Record<string, string> = {
 
 export const DIETARY_DISCLAIMER =
   "La información de ARIMUNDO MASCOTAS es orientativa y no reemplaza el consejo de un veterinario. Consulta siempre con un profesional antes de cambiar la alimentación de tu perro.";
+
+/**
+ * Reemplaza en sitio el catálogo local con el que vive en la base de datos.
+ * Los módulos que importan RECIPES/INGREDIENTS siguen funcionando igual.
+ */
+export function hydrateCatalog(recipes: Recipe[], ingredients: Ingredient[]) {
+  if (recipes.length) RECIPES.splice(0, RECIPES.length, ...recipes);
+  if (ingredients.length) INGREDIENTS.splice(0, INGREDIENTS.length, ...ingredients);
+}
