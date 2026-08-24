@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { RECIPES } from "./mock-data";
 import { buildShoppingList, generateWeek, streakFromLog } from "./planner";
+import { guessCategory, isCovered } from "./pantry";
 import { TRIAL_DAYS, maxDogsFor } from "./plans";
 import { computeAchievements } from "./achievements";
 import type {
@@ -23,6 +24,7 @@ import type {
   PlanId,
   Recipe,
   ReminderKey,
+  PantryItem,
   ShoppingItem,
   WeeklyPlanDay,
   WeightRecord,
@@ -44,7 +46,7 @@ interface PersistedState {
   activeDogId: string | null;
   favorites: string[];
   prepared: string[];
-  pantry: string[];
+  pantryItems: PantryItem[];
   shopping: ShoppingItem[];
   weeklyPlan: WeeklyPlanDay[];
   chat: ChatMessage[];
@@ -60,7 +62,7 @@ const EMPTY: PersistedState = {
   activeDogId: null,
   favorites: [],
   prepared: [],
-  pantry: [],
+  pantryItems: [],
   shopping: [],
   weeklyPlan: [],
   chat: [],
@@ -91,6 +93,8 @@ export interface AuthResult {
 
 interface AppContextValue extends PersistedState {
   hydrated: boolean;
+  /** Nombres de los ingredientes disponibles en Mi Alacena. */
+  pantry: string[];
   activeDog: Dog | null;
   trialDaysLeft: number;
   isTrialActive: boolean;
@@ -123,6 +127,10 @@ interface AppContextValue extends PersistedState {
   toggleShoppingOwned: (id: string) => void;
   addRecipeToShopping: (recipeId: string) => void;
   togglePantry: (name: string) => void;
+  addPantryItem: (item: Omit<PantryItem, "id" | "createdAt">) => void;
+  updatePantryItem: (id: string, patch: Partial<PantryItem>) => void;
+  removePantryItem: (id: string) => void;
+  addMissingToShopping: (recipeId: string) => void;
   sendChatMessage: (content: string) => void;
   clearChat: () => void;
   addWeightRecord: (dogId: string, weight: number, note?: string) => void;
@@ -228,9 +236,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const hasAccess = Boolean(state.user) && (isTrialActive || state.user?.plan !== "trial");
     const maxDogs = maxDogsFor(state.user?.plan ?? "trial");
 
+    const pantryNames = state.pantryItems
+      .filter((i) => i.status !== "consumido")
+      .map((i) => i.name);
+
     return {
       ...state,
       hydrated,
+      pantry: pantryNames,
       activeDog,
       trialDaysLeft,
       isTrialActive,
@@ -322,8 +335,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         })),
       markPrepared: (recipeId) => {
         const entryId = uid("prep");
-        patch((prev) => ({
+        patch((prev) => {
+          const recipe = RECIPES.find((r) => r.id === recipeId);
+          const available = prev.pantryItems.filter((i) => i.status !== "consumido");
+          const usedIds = recipe
+            ? available
+                .filter((item) => recipe.ingredients.some((ing) => isCovered(ing, [item])))
+                .map((i) => i.id)
+            : [];
+          const usedPantry = Boolean(
+            recipe && recipe.ingredients.every((ing) => isCovered(ing, available)),
+          );
+          return {
           ...prev,
+          pantryItems: prev.pantryItems.map((i) =>
+            usedIds.includes(i.id)
+              ? { ...i, status: i.status === "disponible" ? "poco" : "consumido" }
+              : i,
+          ),
           prepared: prev.prepared.includes(recipeId)
             ? prev.prepared
             : [...prev.prepared, recipeId],
@@ -334,9 +363,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
               recipeId,
               ...(prev.activeDogId ? { dogId: prev.activeDogId } : {}),
               date: new Date().toISOString(),
+              ...(usedPantry ? { usedPantry: true } : {}),
             },
           ],
-        }));
+          };
+        });
         return entryId;
       },
       ratePrepared: (entryId, rating, notes) =>
@@ -357,12 +388,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         patch((prev) => {
           const dog = prev.dogs.find((d) => d.id === prev.activeDogId) ?? prev.dogs[0] ?? null;
           const plan = generateWeek(dog, Math.floor(Math.random() * 7));
-          return { ...prev, weeklyPlan: plan, shopping: buildShoppingList(plan, prev.shopping) };
+          return {
+            ...prev,
+            weeklyPlan: plan,
+            shopping: buildShoppingList(plan, prev.shopping, pantryNames),
+          };
         }),
       replacePlanDay: (day, recipeId) =>
         patch((prev) => {
           const plan = prev.weeklyPlan.map((d) => (d.day === day ? { ...d, recipeId } : d));
-          return { ...prev, weeklyPlan: plan, shopping: buildShoppingList(plan, prev.shopping) };
+          return {
+            ...prev,
+            weeklyPlan: plan,
+            shopping: buildShoppingList(plan, prev.shopping, pantryNames),
+          };
         }),
       toggleShoppingBought: (id) =>
         patch((prev) => ({
@@ -401,7 +440,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         patch((prev) => {
           const dog = prev.dogs.find((d) => d.id === prev.activeDogId) ?? prev.dogs[0] ?? null;
           const plan = prev.weeklyPlan.length ? prev.weeklyPlan : generateWeek(dog);
-          return { ...prev, weeklyPlan: plan, shopping: buildShoppingList(plan, prev.shopping) };
+          return {
+            ...prev,
+            weeklyPlan: plan,
+            shopping: buildShoppingList(plan, prev.shopping, pantryNames),
+          };
         }),
       toggleShoppingOwned: (id) =>
         patch((prev) => ({
@@ -429,12 +472,78 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return { ...prev, shopping: items };
         }),
       togglePantry: (name) =>
+        patch((prev) => {
+          const found = prev.pantryItems.find(
+            (i) => i.name.toLowerCase() === name.toLowerCase(),
+          );
+          if (found) {
+            return { ...prev, pantryItems: prev.pantryItems.filter((i) => i.id !== found.id) };
+          }
+          return {
+            ...prev,
+            pantryItems: [
+              ...prev.pantryItems,
+              {
+                id: uid("pan"),
+                name,
+                category: guessCategory(name),
+                quantity: 1,
+                unit: "pza",
+                status: "disponible",
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          };
+        }),
+      addPantryItem: (item) =>
+        patch((prev) => {
+          if (prev.pantryItems.some((i) => i.name.toLowerCase() === item.name.toLowerCase())) {
+            return prev;
+          }
+          return {
+            ...prev,
+            pantryItems: [
+              ...prev.pantryItems,
+              { ...item, id: uid("pan"), createdAt: new Date().toISOString() },
+            ],
+          };
+        }),
+      updatePantryItem: (id, itemPatch) =>
         patch((prev) => ({
           ...prev,
-          pantry: prev.pantry.includes(name)
-            ? prev.pantry.filter((p) => p !== name)
-            : [...prev.pantry, name],
+          pantryItems: prev.pantryItems.map((i) => (i.id === id ? { ...i, ...itemPatch } : i)),
         })),
+      removePantryItem: (id) =>
+        patch((prev) => ({
+          ...prev,
+          pantryItems: prev.pantryItems.filter((i) => i.id !== id),
+        })),
+      addMissingToShopping: (recipeId) =>
+        patch((prev) => {
+          const recipe = RECIPES.find((r) => r.id === recipeId);
+          if (!recipe) return prev;
+          const available = prev.pantryItems.filter((i) => i.status !== "consumido");
+          const missing = recipe.ingredients.filter((ing) => !isCovered(ing, available));
+          const items = prev.shopping.map((i) => ({ ...i }));
+          for (const ing of missing) {
+            const found = items.find((i) => i.id === ing.ingredientId);
+            if (found) {
+              found.quantity = Math.max(found.quantity, ing.quantity);
+              found.owned = false;
+            } else {
+              items.push({
+                id: ing.ingredientId,
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                category: guessCategory(ing.name),
+                owned: false,
+                bought: false,
+              });
+            }
+          }
+          return { ...prev, shopping: items };
+        }),
 
       sendChatMessage: (content) =>
         patch((prev) => {
@@ -447,11 +556,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
             .toLowerCase()
             .split(/[^a-záéíóúñ]+/i)
             .filter((t) => t.length > 3);
+          const pantryTokens = prev.pantryItems
+            .filter((i) => i.status !== "consumido")
+            .map((i) => i.name.toLowerCase());
+          const searchTokens = tokens.length ? tokens : pantryTokens;
           const matches = RECIPES.filter(
             (r) =>
               r.published &&
               !r.ingredients.some((i) => blocked.some((b) => i.name.toLowerCase().includes(b))) &&
-              r.ingredients.some((i) => tokens.some((t) => i.name.toLowerCase().includes(t))),
+              r.ingredients.some((i) =>
+                searchTokens.some((t) => i.name.toLowerCase().includes(t)),
+              ),
           ).slice(0, 3);
 
           const answer = matches.length
