@@ -513,6 +513,66 @@ function RecipeDetail() {
 
         <Disclaimer />
       </div>
+
+      {ratingFor && (
+        <div className="animate-in fade-in fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 duration-200">
+          <div className="animate-in slide-in-from-bottom-4 w-full max-w-md rounded-3xl bg-card p-5 shadow-card duration-300">
+            <p className="text-center font-display text-lg font-extrabold">
+              ¿A tu perro le gustó?
+            </p>
+            <p className="mt-1 text-center text-xs text-muted-foreground">{recipe.title}</p>
+            <div className="mt-4 flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-label={`${n} estrellas`}
+                  onClick={() => setRating(n)}
+                  className="text-3xl transition-transform active:scale-125"
+                >
+                  <span className={n <= rating ? "" : "opacity-30 grayscale"}>⭐</span>
+                </button>
+              ))}
+            </div>
+            <form
+              className="mt-4 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const note = String(new FormData(e.currentTarget).get("note") ?? "").trim();
+                ratePrepared(ratingFor, rating, note || undefined);
+                setRatingFor(null);
+                setRating(0);
+                void navigate({ to: "/bienestar" });
+              }}
+            >
+              <textarea
+                name="note"
+                rows={2}
+                placeholder="Agrega un comentario (opcional)"
+                className="w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-brand py-3.5 text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.97]"
+              >
+                Guardar calificación
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRatingFor(null);
+                  setRating(0);
+                  void navigate({ to: "/" });
+                }}
+                className="w-full py-1 text-xs font-bold text-muted-foreground"
+              >
+                Ahora no
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </AppShell>
+
   );
 }
