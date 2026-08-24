@@ -181,6 +181,7 @@ function RecipeDetail() {
     prepared,
     toggleFavorite,
     markPrepared,
+    ratePrepared,
     addIngredientsToShopping,
     shopping,
   } = useApp();
