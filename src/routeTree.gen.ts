@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AlacenaRouteImport } from './routes/alacena'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BienestarRouteImport } from './routes/bienestar'
 import { Route as ChefRouteImport } from './routes/chef'
@@ -34,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlacenaRoute = AlacenaRouteImport.update({
+  id: '/alacena',
+  path: '/alacena',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -110,6 +116,7 @@ const RecetasSlugRoute = RecetasSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/alacena': typeof AlacenaRoute
   '/auth': typeof AuthRouteWithChildren
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/alacena': typeof AlacenaRoute
   '/auth': typeof AuthRouteWithChildren
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/alacena': typeof AlacenaRoute
   '/auth': typeof AuthRouteWithChildren
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/alacena'
     | '/auth'
     | '/bienestar'
     | '/chef'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/alacena'
     | '/auth'
     | '/bienestar'
     | '/chef'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/alacena'
     | '/auth'
     | '/bienestar'
     | '/chef'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AlacenaRoute: typeof AlacenaRoute
   AuthRoute: typeof AuthRouteWithChildren
   BienestarRoute: typeof BienestarRoute
   ChefRoute: typeof ChefRoute
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alacena': {
+      id: '/alacena'
+      path: '/alacena'
+      fullPath: '/alacena'
+      preLoaderRoute: typeof AlacenaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -367,6 +387,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AlacenaRoute: AlacenaRoute,
   AuthRoute: AuthRouteWithChildren,
   BienestarRoute: BienestarRoute,
   ChefRoute: ChefRoute,

@@ -130,6 +130,26 @@ export interface PreparedLogEntry {
   rating?: number;
   /** Comentario libre del dueño */
   notes?: string;
+  /** Se preparó usando ingredientes de Mi Alacena */
+  usedPantry?: boolean;
+}
+
+export type PantryStatus = "disponible" | "poco" | "consumido";
+
+/** Ingrediente registrado por el usuario en 🏠 Mi Alacena. */
+export interface PantryItem {
+  id: UUID;
+  name: string;
+  category: IngredientCategory;
+  quantity: number;
+  unit: string;
+  status: PantryStatus;
+  /** Fecha de compra (YYYY-MM-DD) */
+  purchasedAt?: string;
+  /** Fecha de vencimiento (YYYY-MM-DD) */
+  expiresAt?: string;
+  notes?: string;
+  createdAt: string;
 }
 
 export type ReminderKey =
