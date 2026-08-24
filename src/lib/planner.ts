@@ -92,7 +92,11 @@ function categoryOf(name: string): ShoppingItem["category"] {
 export function buildShoppingList(
   plan: WeeklyPlanDay[],
   previous: ShoppingItem[],
+  pantryNames: string[] = [],
 ): ShoppingItem[] {
+  const pantry = pantryNames.map(norm).filter(Boolean);
+  const inPantry = (name: string) =>
+    pantry.some((p) => p === norm(name) || norm(name).includes(p) || p.includes(norm(name)));
   const map = new Map<string, ShoppingItem>();
   for (const day of plan) {
     const recipe = RECIPES.find((r) => r.id === day.recipeId);
@@ -110,7 +114,7 @@ export function buildShoppingList(
         quantity: ing.quantity,
         unit: ing.unit,
         category: categoryOf(ing.name),
-        owned: prev?.owned ?? false,
+        owned: prev?.owned ?? inPantry(ing.name),
         bought: prev?.bought ?? false,
       });
     }
