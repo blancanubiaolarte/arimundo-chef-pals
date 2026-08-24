@@ -126,6 +126,27 @@ export interface PreparedLogEntry {
   recipeId: UUID;
   dogId?: UUID;
   date: string;
+  /** 1-5 estrellas otorgadas por el dueño */
+  rating?: number;
+  /** Comentario libre del dueño */
+  notes?: string;
+}
+
+export type ReminderKey =
+  | "comida"
+  | "cocinar"
+  | "pesar"
+  | "compras"
+  | "recetaDelDia";
+
+export interface Achievement {
+  code: string;
+  emoji: string;
+  title: string;
+  description: string;
+  earned: boolean;
+  progress: number;
+  target: number;
 }
 
 export interface ChatMessage {
@@ -141,4 +162,5 @@ export interface WeightRecord {
   dogId: UUID;
   date: string;
   weight: number;
+  note?: string;
 }
