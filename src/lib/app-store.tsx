@@ -13,13 +13,16 @@ import { lovable } from "@/integrations/lovable";
 import { RECIPES } from "./mock-data";
 import { buildShoppingList, generateWeek, streakFromLog } from "./planner";
 import { TRIAL_DAYS, maxDogsFor } from "./plans";
+import { computeAchievements } from "./achievements";
 import type {
+  Achievement,
   AppUser,
   ChatMessage,
   Dog,
   PreparedLogEntry,
   PlanId,
   Recipe,
+  ReminderKey,
   ShoppingItem,
   WeeklyPlanDay,
   WeightRecord,
@@ -48,6 +51,7 @@ interface PersistedState {
   weights: WeightRecord[];
   dailyRecipeId: string | null;
   preparedLog: PreparedLogEntry[];
+  reminders: Partial<Record<ReminderKey, boolean>>;
 }
 
 const EMPTY: PersistedState = {
@@ -63,6 +67,7 @@ const EMPTY: PersistedState = {
   weights: [],
   dailyRecipeId: null,
   preparedLog: [],
+  reminders: {},
 };
 
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -94,6 +99,7 @@ interface AppContextValue extends PersistedState {
   canAddDog: boolean;
   dailyRecipe: Recipe | null;
   streak: number;
+  achievements: Achievement[];
   signUp: (name: string, email: string, password: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult>;
@@ -105,7 +111,9 @@ interface AppContextValue extends PersistedState {
   setActiveDog: (id: string) => void;
   toggleFavorite: (recipeId: string) => void;
   togglePrepared: (recipeId: string) => void;
-  markPrepared: (recipeId: string) => void;
+  markPrepared: (recipeId: string) => string;
+  ratePrepared: (entryId: string, rating: number, notes?: string) => void;
+  toggleReminder: (key: ReminderKey) => void;
   generateWeeklyMenu: () => void;
   replacePlanDay: (day: string, recipeId: string) => void;
   toggleShoppingBought: (id: string) => void;
@@ -117,7 +125,7 @@ interface AppContextValue extends PersistedState {
   togglePantry: (name: string) => void;
   sendChatMessage: (content: string) => void;
   clearChat: () => void;
-  addWeightRecord: (dogId: string, weight: number) => void;
+  addWeightRecord: (dogId: string, weight: number, note?: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -231,6 +239,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       canAddDog: state.dogs.length < maxDogs,
       dailyRecipe: RECIPES.find((r) => r.id === state.dailyRecipeId) ?? RECIPES[0]!,
       streak: streakFromLog(state.preparedLog.map((p) => p.date)),
+      achievements: computeAchievements({
+        preparedLog: state.preparedLog,
+        favorites: state.favorites,
+        weeklyPlan: state.weeklyPlan,
+        weights: state.weights,
+      }),
 
       signUp: async (name, email, password) => {
         const { data, error } = await supabase.auth.signUp({
@@ -306,7 +320,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? prev.prepared.filter((f) => f !== recipeId)
             : [...prev.prepared, recipeId],
         })),
-      markPrepared: (recipeId) =>
+      markPrepared: (recipeId) => {
+        const entryId = uid("prep");
         patch((prev) => ({
           ...prev,
           prepared: prev.prepared.includes(recipeId)
@@ -315,12 +330,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
           preparedLog: [
             ...prev.preparedLog,
             {
-              id: uid("prep"),
+              id: entryId,
               recipeId,
               ...(prev.activeDogId ? { dogId: prev.activeDogId } : {}),
               date: new Date().toISOString(),
             },
           ],
+        }));
+        return entryId;
+      },
+      ratePrepared: (entryId, rating, notes) =>
+        patch((prev) => ({
+          ...prev,
+          preparedLog: prev.preparedLog.map((entry) =>
+            entry.id === entryId
+              ? { ...entry, rating, ...(notes ? { notes } : {}) }
+              : entry,
+          ),
+        })),
+      toggleReminder: (key) =>
+        patch((prev) => ({
+          ...prev,
+          reminders: { ...prev.reminders, [key]: !prev.reminders[key] },
         })),
       generateWeeklyMenu: () =>
         patch((prev) => {
@@ -445,12 +476,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }),
       clearChat: () => patch((prev) => ({ ...prev, chat: [] })),
 
-      addWeightRecord: (dogId, weight) =>
+      addWeightRecord: (dogId, weight, note) =>
         patch((prev) => ({
           ...prev,
           weights: [
             ...prev.weights,
-            { id: uid("w"), dogId, weight, date: new Date().toISOString() },
+            {
+              id: uid("w"),
+              dogId,
+              weight,
+              date: new Date().toISOString(),
+              ...(note ? { note } : {}),
+            },
           ],
           dogs: prev.dogs.map((d) => (d.id === dogId ? { ...d, weight } : d)),
         })),
