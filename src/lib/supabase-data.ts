@@ -368,6 +368,7 @@ export const db = {
     if (items.length) {
       const { error } = await supabase.from("shopping_items").insert(
         items.map((i) => ({
+          id: i.id,
           list_id: id,
           user_id: userId,
           name: i.name,
