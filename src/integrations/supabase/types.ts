@@ -770,6 +770,48 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_counters: {
+        Row: {
+          created_at: string
+          daily_date: string
+          daily_generated: number
+          id: string
+          last_recipe_at: string | null
+          month: number
+          plan: string
+          recipes_generated: number
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          daily_date?: string
+          daily_generated?: number
+          id?: string
+          last_recipe_at?: string | null
+          month: number
+          plan?: string
+          recipes_generated?: number
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          daily_date?: string
+          daily_generated?: number
+          id?: string
+          last_recipe_at?: string | null
+          month?: number
+          plan?: string
+          recipes_generated?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -893,7 +935,7 @@ export type Database = {
         | "grasa"
         | "suplemento"
       pantry_status: "disponible" | "poco" | "consumido"
-      plan_id: "trial" | "basico" | "familiar" | "premium"
+      plan_id: "trial" | "basico" | "familiar" | "premium" | "gratis" | "pro"
       recipe_category:
         | "desayuno"
         | "principal"
@@ -1043,7 +1085,7 @@ export const Constants = {
         "suplemento",
       ],
       pantry_status: ["disponible", "poco", "consumido"],
-      plan_id: ["trial", "basico", "familiar", "premium"],
+      plan_id: ["trial", "basico", "familiar", "premium", "gratis", "pro"],
       recipe_category: [
         "desayuno",
         "principal",
