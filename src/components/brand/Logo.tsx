@@ -1,9 +1,9 @@
-import logo from "@/assets/arimundo-logo.png.asset.json";
+import logoUrl from "@/assets/arimundo-logo.png";
 
 export function Logo({ size = 44, className = "" }: { size?: number; className?: string }) {
   return (
     <img
-      src={logo.url}
+      src={logoUrl}
       alt="ARIMUNDO MASCOTAS"
       width={size}
       height={size}
