@@ -497,3 +497,110 @@ export async function uploadImage(
   const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 365);
   return data?.signedUrl ?? null;
 }
+
+/* ---------------------- CATÁLOGO (ADMINISTRACIÓN) ---------------------- */
+
+export type SaveResult = { error?: string };
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 60);
+}
+
+export const adminDb = {
+  slugify,
+
+  /** Crea o actualiza una receta junto con sus ingredientes. */
+  async saveRecipe(recipe: Recipe): Promise<SaveResult> {
+    const slug = recipe.slug || slugify(recipe.title) || newId().slice(0, 8);
+    const { error } = await supabase.from("recipes").upsert({
+      id: recipe.id,
+      slug,
+      title: recipe.title,
+      image_url: recipe.imageUrl || null,
+      category: recipe.category,
+      minutes: recipe.minutes,
+      servings: recipe.servings,
+      needs_oven: recipe.needsOven,
+      benefit: recipe.benefit,
+      storage: recipe.storage,
+      steps: recipe.steps,
+      published: recipe.published,
+      views: recipe.views,
+    } as never);
+    if (error) return { error: error.message };
+
+    const del = await supabase.from("recipe_ingredients").delete().eq("recipe_id", recipe.id);
+    if (del.error) return { error: del.error.message };
+
+    if (recipe.ingredients.length) {
+      const { data: known } = await supabase.from("ingredients").select("id");
+      const validIds = new Set((known ?? []).map((k) => k.id));
+      const ins = await supabase.from("recipe_ingredients").insert(
+        recipe.ingredients.map((i) => ({
+          recipe_id: recipe.id,
+          ingredient_id: validIds.has(i.ingredientId) ? i.ingredientId : null,
+          name: i.name,
+          quantity: i.quantity,
+          unit: i.unit,
+        })) as never,
+      );
+      if (ins.error) return { error: ins.error.message };
+    }
+    return {};
+  },
+
+  async setRecipePublished(id: string, published: boolean): Promise<SaveResult> {
+    const { error } = await supabase
+      .from("recipes")
+      .update({ published } as never)
+      .eq("id", id);
+    return error ? { error: error.message } : {};
+  },
+
+  async deleteRecipe(id: string): Promise<SaveResult> {
+    await supabase.from("recipe_ingredients").delete().eq("recipe_id", id);
+    const { error } = await supabase.from("recipes").delete().eq("id", id);
+    return error ? { error: error.message } : {};
+  },
+
+  /** Crea o actualiza un ingrediente y su clasificación de seguridad. */
+  async saveIngredient(ingredient: Ingredient): Promise<SaveResult> {
+    const { error } = await supabase.from("ingredients").upsert({
+      id: ingredient.id,
+      name: ingredient.name,
+      category: ingredient.category,
+    } as never);
+    if (error) return { error: error.message };
+
+    const existing = await supabase
+      .from("ingredient_safety")
+      .select("id")
+      .eq("ingredient_id", ingredient.id)
+      .maybeSingle();
+
+    const payload = {
+      ingredient_id: ingredient.id,
+      safety: ingredient.safety,
+      note: ingredient.note ?? null,
+    };
+    const res = existing.data?.id
+      ? await supabase
+          .from("ingredient_safety")
+          .update(payload as never)
+          .eq("id", existing.data.id)
+      : await supabase.from("ingredient_safety").insert(payload as never);
+    return res.error ? { error: res.error.message } : {};
+  },
+
+  async deleteIngredient(id: string): Promise<SaveResult> {
+    await supabase.from("ingredient_safety").delete().eq("ingredient_id", id);
+    const { error } = await supabase.from("ingredients").delete().eq("id", id);
+    return error ? { error: error.message } : {};
+  },
+};
