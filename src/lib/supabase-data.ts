@@ -539,10 +539,12 @@ export const adminDb = {
     if (del.error) return { error: del.error.message };
 
     if (recipe.ingredients.length) {
+      const { data: known } = await supabase.from("ingredients").select("id");
+      const validIds = new Set((known ?? []).map((k) => k.id));
       const ins = await supabase.from("recipe_ingredients").insert(
         recipe.ingredients.map((i) => ({
           recipe_id: recipe.id,
-          ingredient_id: INGREDIENT_ID_RE.test(i.ingredientId) ? i.ingredientId : null,
+          ingredient_id: validIds.has(i.ingredientId) ? i.ingredientId : null,
           name: i.name,
           quantity: i.quantity,
           unit: i.unit,
@@ -602,6 +604,3 @@ export const adminDb = {
     return error ? { error: error.message } : {};
   },
 };
-
-const INGREDIENT_ID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
