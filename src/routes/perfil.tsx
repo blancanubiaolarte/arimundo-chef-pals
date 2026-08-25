@@ -69,6 +69,8 @@ function ProfilePage() {
           </Link>
         </section>
 
+        <UsageCard />
+
         <section className="grid grid-cols-3 gap-3">
           {[
             ["Perros", dogs.length],
