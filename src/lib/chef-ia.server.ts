@@ -23,8 +23,8 @@ export async function askChefWithOpenAI(params: {
   message: string;
   candidates: RecipeCandidate[];
   blocked: string[];
-  pantry?: string[];
-  dogName?: string | null;
+  pantry?: string[] | undefined;
+  dogName?: string | null | undefined;
 }): Promise<string> {
   const library = params.candidates
     .map((r) => `- ${r.title} (${r.minutes ?? "?"} min, ${r.category ?? "general"})`)
@@ -86,9 +86,9 @@ const RECIPE_SCHEMA = {
 export async function generateRecipeWithOpenAI(params: {
   prompt: string;
   blocked: string[];
-  pantry?: string[];
-  maxMinutes?: number;
-  noOven?: boolean;
+  pantry?: string[] | undefined;
+  maxMinutes?: number | undefined;
+  noOven?: boolean | undefined;
 }): Promise<GeneratedRecipe> {
   const input = [
     `Petición: ${params.prompt}`,
