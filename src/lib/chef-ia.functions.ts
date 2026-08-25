@@ -149,6 +149,22 @@ export const generateRecipeIA = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { generateRecipeWithOpenAI, VET_DISCLAIMER } = await import("./chef-ia.server");
     const { sanitizeIngredients, sanitizeSteps } = await import("./dog-safety");
+    const { checkQuota, consumeQuota, resolvePlan } = await import("./usage.server");
+    const { LIMIT_REACHED_MESSAGE } = await import("./usage-limits");
+
+    // Validación de límite SIEMPRE en el backend, antes de llamar a OpenAI.
+    const supa = supabase as unknown as { from: (t: string) => any };
+    const plan = await resolvePlan(supa, userId);
+    const quota = await checkQuota(supa, userId, plan);
+    if (!quota.allowed) {
+      return {
+        ok: false as const,
+        error: LIMIT_REACHED_MESSAGE,
+        limitReached: true as const,
+        usage: quota.summary,
+        disclaimer: VET_DISCLAIMER,
+      };
+    }
 
     const dog = await loadDog(supabase as unknown as Supa, data.dogId, userId);
     const history = await loadHistory(supabase as unknown as Supa, dog?.id, userId);
@@ -197,9 +213,12 @@ export const generateRecipeIA = createServerFn({ method: "POST" })
         .select("id, created_at")
         .maybeSingle();
 
+      const usage = await consumeQuota(supa, quota.row, plan);
+
       return {
         ok: true as const,
         recipe,
+        usage,
         id: saved?.id ?? null,
         createdAt: saved?.created_at ?? null,
         replaced: ingredients.filter((i) => i.replaced).map((i) => i.replaced as string),
@@ -209,6 +228,7 @@ export const generateRecipeIA = createServerFn({ method: "POST" })
       return {
         ok: false as const,
         error: error instanceof Error ? error.message : "No se pudo generar la receta con OpenAI.",
+        limitReached: false as const,
         disclaimer: VET_DISCLAIMER,
       };
     }
