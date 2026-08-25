@@ -11,7 +11,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AppProvider } from "../lib/app-store";
+// Debe usar el mismo especificador ("@/...") que el resto de la app para que
+// exista una única instancia del módulo (y del contexto) en el bundle.
+import { AppProvider } from "@/lib/app-store";
 
 function NotFoundComponent() {
   return (
