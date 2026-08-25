@@ -676,10 +676,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : "Todavía no tengo una receta de la biblioteca con esos ingredientes. Cuéntame qué más tienes en casa y busco otra opción. Esta información es orientativa y no reemplaza el consejo de un veterinario.";
 
         const now = new Date().toISOString();
+        const assistantId = newId();
         const messages: ChatMessage[] = [
           { id: newId(), role: "user", content, createdAt: now },
           {
-            id: newId(),
+            id: assistantId,
             role: "assistant",
             content: answer,
             recipeIds: matches.map((m) => m.id),
@@ -688,12 +689,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ];
         patch((prev) => ({ ...prev, chat: [...prev.chat, ...messages] }));
         if (userId) {
-          void db
-            .ensureConversation(userId, state.conversationId, state.activeDogId)
-            .then((conversationId) => {
-              setState((prev) => ({ ...prev, conversationId }));
-              db.addMessages(userId, conversationId, messages);
-            });
+          // Chef IA real: lee el perfil completo del perro y el historial en el backend.
+          void (async () => {
+            try {
+              const { askChefIA } = await import("./chef-ia.functions");
+              const res = await askChefIA({
+                data: {
+                  message: content,
+                  ...(dog?.id ? { dogId: dog.id } : {}),
+                  pantry: pantryTokens,
+                },
+              });
+              if (res?.ready && res.reply) {
+                const reply = res.reply;
+                patch((prev) => ({
+                  ...prev,
+                  chat: prev.chat.map((m) =>
+                    m.id === assistantId ? { ...m, content: reply } : m,
+                  ),
+                }));
+                messages[1] = { ...messages[1]!, content: reply };
+              }
+            } catch {
+              /* se mantiene la respuesta local de la biblioteca */
+            }
+            const conversationId = await db.ensureConversation(
+              userId,
+              state.conversationId,
+              state.activeDogId,
+            );
+            setState((prev) => ({ ...prev, conversationId }));
+            db.addMessages(userId, conversationId, messages);
+          })();
         }
       },
       clearChat: () => {
