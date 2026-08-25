@@ -167,7 +167,9 @@ export type Database = {
           forbidden_ingredients: string[]
           goal: string
           has_oven: boolean
+          health_conditions: string[]
           id: string
+          is_neutered: boolean
           name: string
           photo_url: string | null
           sex: Database["public"]["Enums"]["dog_sex"]
@@ -190,7 +192,9 @@ export type Database = {
           forbidden_ingredients?: string[]
           goal?: string
           has_oven?: boolean
+          health_conditions?: string[]
           id?: string
+          is_neutered?: boolean
           name: string
           photo_url?: string | null
           sex?: Database["public"]["Enums"]["dog_sex"]
@@ -213,7 +217,9 @@ export type Database = {
           forbidden_ingredients?: string[]
           goal?: string
           has_oven?: boolean
+          health_conditions?: string[]
           id?: string
+          is_neutered?: boolean
           name?: string
           photo_url?: string | null
           sex?: Database["public"]["Enums"]["dog_sex"]
@@ -250,6 +256,74 @@ export type Database = {
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_recipes: {
+        Row: {
+          benefits: string
+          calories: number
+          category: Database["public"]["Enums"]["recipe_category"]
+          created_at: string
+          description: string
+          difficulty: string
+          dog_id: string | null
+          id: string
+          ingredients: Json
+          minutes: number
+          servings: number
+          steps: string[]
+          storage: string
+          title: string
+          updated_at: string
+          user_id: string
+          warnings: string
+        }
+        Insert: {
+          benefits?: string
+          calories?: number
+          category?: Database["public"]["Enums"]["recipe_category"]
+          created_at?: string
+          description?: string
+          difficulty?: string
+          dog_id?: string | null
+          id?: string
+          ingredients?: Json
+          minutes?: number
+          servings?: number
+          steps?: string[]
+          storage?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          warnings?: string
+        }
+        Update: {
+          benefits?: string
+          calories?: number
+          category?: Database["public"]["Enums"]["recipe_category"]
+          created_at?: string
+          description?: string
+          difficulty?: string
+          dog_id?: string | null
+          id?: string
+          ingredients?: Json
+          minutes?: number
+          servings?: number
+          steps?: string[]
+          storage?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          warnings?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_recipes_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "dogs"
             referencedColumns: ["id"]
           },
         ]

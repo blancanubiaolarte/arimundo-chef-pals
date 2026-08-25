@@ -2,20 +2,102 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Chef IA — impulsado exclusivamente por OpenAI (API Responses).
+ * Chef IA — nutricionista canino impulsado por OpenAI (API Responses).
  *
- * Reglas:
- * 1. La respuesta parte SIEMPRE de la biblioteca de recetas publicadas.
- * 2. Nunca sugiere ingredientes registrados como alergia o prohibidos.
- * 3. Nunca hace afirmaciones médicas; siempre incluye el aviso veterinario.
- * 4. La clave del modelo (OPENAI_API_KEY) vive solo en el backend.
+ * 1. Lee automáticamente el perfil completo del perro desde la base de datos.
+ * 2. Considera el historial para no repetir recetas.
+ * 3. Valida y sustituye ingredientes tóxicos o prohibidos antes de responder.
+ * 4. Guarda cada receta generada y actualiza el historial del perro.
+ * 5. La clave del modelo (OPENAI_API_KEY) vive solo en el backend.
  */
+
+const DOG_COLUMNS =
+  "id, name, sex, age_years, breed, weight, weight_unit, activity_level, is_neutered, goal, allergies, health_conditions, forbidden_ingredients, favorite_ingredients, disliked_ingredients, cooking_time, has_oven";
+
+type DogRow = {
+  id: string;
+  name: string;
+  sex: string | null;
+  age_years: number | null;
+  breed: string | null;
+  weight: number | null;
+  weight_unit: string | null;
+  activity_level: string | null;
+  is_neutered: boolean | null;
+  goal: string | null;
+  allergies: string[] | null;
+  health_conditions: string[] | null;
+  forbidden_ingredients: string[] | null;
+  favorite_ingredients: string[] | null;
+  disliked_ingredients: string[] | null;
+  cooking_time: string | null;
+  has_oven: boolean | null;
+};
+
+function toContext(dog: DogRow | null) {
+  if (!dog) return null;
+  return {
+    name: dog.name,
+    sex: dog.sex,
+    ageYears: dog.age_years,
+    breed: dog.breed,
+    weight: dog.weight,
+    weightUnit: dog.weight_unit,
+    activityLevel: dog.activity_level,
+    isNeutered: dog.is_neutered,
+    goal: dog.goal,
+    allergies: dog.allergies ?? [],
+    healthConditions: dog.health_conditions ?? [],
+    forbidden: dog.forbidden_ingredients ?? [],
+    favorites: dog.favorite_ingredients ?? [],
+    disliked: dog.disliked_ingredients ?? [],
+    cookingTime: dog.cooking_time,
+    hasOven: dog.has_oven,
+  };
+}
+
+type Supa = { from: (t: string) => any };
+
+async function loadDog(supabase: Supa, dogId: string | undefined, userId: string) {
+  const query = supabase.from("dogs").select(DOG_COLUMNS).eq("user_id", userId).limit(1);
+  const { data } = dogId
+    ? await supabase.from("dogs").select(DOG_COLUMNS).eq("id", dogId).maybeSingle()
+    : await query.maybeSingle();
+  return (data ?? null) as DogRow | null;
+}
+
+/** Títulos de recetas ya generadas o preparadas para ese perro. */
+async function loadHistory(supabase: Supa, dogId: string | undefined, userId: string) {
+  if (!dogId) return [] as string[];
+  const [generated, prepared] = await Promise.all([
+    supabase
+      .from("generated_recipes")
+      .select("title")
+      .eq("dog_id", dogId)
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase
+      .from("prepared_recipes")
+      .select("recipe:recipes(title)")
+      .eq("dog_id", dogId)
+      .order("prepared_at", { ascending: false })
+      .limit(20),
+  ]);
+  const titles = [
+    ...((generated.data ?? []) as { title: string }[]).map((r) => r.title),
+    ...((prepared.data ?? []) as { recipe: { title: string } | null }[])
+      .map((r) => r.recipe?.title)
+      .filter((t): t is string => Boolean(t)),
+  ];
+  void userId;
+  return Array.from(new Set(titles)).slice(0, 30);
+}
 
 export const askChefIA = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { message: string; dogId?: string; pantry?: string[] }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { askChefWithOpenAI, VET_DISCLAIMER } = await import("./chef-ia.server");
 
     const { data: recipes } = await supabase
@@ -24,17 +106,9 @@ export const askChefIA = createServerFn({ method: "POST" })
       .eq("published", true)
       .limit(50);
 
-    let blocked: string[] = [];
-    let dogName: string | null = null;
-    if (data.dogId) {
-      const { data: dog } = await supabase
-        .from("dogs")
-        .select("name, allergies, forbidden_ingredients")
-        .eq("id", data.dogId)
-        .maybeSingle();
-      dogName = dog?.name ?? null;
-      blocked = [...(dog?.allergies ?? []), ...(dog?.forbidden_ingredients ?? [])];
-    }
+    const dog = await loadDog(supabase as unknown as Supa, data.dogId, userId);
+    const history = await loadHistory(supabase as unknown as Supa, dog?.id, userId);
+    const blocked = [...(dog?.allergies ?? []), ...(dog?.forbidden_ingredients ?? [])];
 
     try {
       const reply = await askChefWithOpenAI({
@@ -42,7 +116,8 @@ export const askChefIA = createServerFn({ method: "POST" })
         candidates: recipes ?? [],
         blocked,
         pantry: data.pantry ?? [],
-        dogName,
+        dog: toContext(dog),
+        history,
       });
       return {
         ready: true as const,
@@ -71,28 +146,65 @@ export const generateRecipeIA = createServerFn({ method: "POST" })
       input,
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { generateRecipeWithOpenAI, VET_DISCLAIMER } = await import("./chef-ia.server");
+    const { sanitizeIngredients, sanitizeSteps } = await import("./dog-safety");
 
-    let blocked: string[] = [];
-    if (data.dogId) {
-      const { data: dog } = await supabase
-        .from("dogs")
-        .select("allergies, forbidden_ingredients")
-        .eq("id", data.dogId)
-        .maybeSingle();
-      blocked = [...(dog?.allergies ?? []), ...(dog?.forbidden_ingredients ?? [])];
-    }
+    const dog = await loadDog(supabase as unknown as Supa, data.dogId, userId);
+    const history = await loadHistory(supabase as unknown as Supa, dog?.id, userId);
+    const blocked = [...(dog?.allergies ?? []), ...(dog?.forbidden_ingredients ?? [])];
 
     try {
-      const recipe = await generateRecipeWithOpenAI({
+      const raw = await generateRecipeWithOpenAI({
         prompt: data.prompt,
         blocked,
+        dog: toContext(dog),
+        history,
         pantry: data.pantry ?? [],
         maxMinutes: data.maxMinutes,
-        noOven: data.noOven,
+        noOven: data.noOven ?? (dog?.has_oven === false ? true : undefined),
       });
-      return { ok: true as const, recipe, disclaimer: VET_DISCLAIMER };
+
+      // Validación de seguridad: sustituye tóxicos/prohibidos por alternativas seguras.
+      const { ingredients, warnings } = sanitizeIngredients(raw.ingredients ?? [], blocked);
+      const steps = sanitizeSteps(raw.steps ?? [], ingredients);
+      const recipe = {
+        ...raw,
+        ingredients: ingredients.map((i) => ({ name: i.name, quantity: i.quantity })),
+        steps,
+        warnings: [raw.warnings, ...warnings].filter(Boolean).join(" "),
+      };
+
+      // Guardado automático + actualización del historial del perro.
+      const { data: saved } = await supabase
+        .from("generated_recipes")
+        .insert({
+          user_id: userId,
+          dog_id: dog?.id ?? null,
+          title: recipe.title,
+          description: recipe.description ?? "",
+          category: (recipe.category ?? "principal") as never,
+          ingredients: recipe.ingredients as never,
+          steps: recipe.steps,
+          minutes: recipe.minutes ?? 0,
+          servings: recipe.servings ?? 1,
+          benefits: recipe.benefits ?? "",
+          storage: recipe.storage ?? "",
+          warnings: recipe.warnings ?? "",
+          difficulty: recipe.difficulty ?? "facil",
+          calories: recipe.calories ?? 0,
+        })
+        .select("id, created_at")
+        .maybeSingle();
+
+      return {
+        ok: true as const,
+        recipe,
+        id: saved?.id ?? null,
+        createdAt: saved?.created_at ?? null,
+        replaced: ingredients.filter((i) => i.replaced).map((i) => i.replaced as string),
+        disclaimer: VET_DISCLAIMER,
+      };
     } catch (error) {
       return {
         ok: false as const,
@@ -100,4 +212,21 @@ export const generateRecipeIA = createServerFn({ method: "POST" })
         disclaimer: VET_DISCLAIMER,
       };
     }
+  });
+
+/** Historial de recetas generadas por IA para un perro. */
+export const listGeneratedRecipes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { dogId?: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    let q = supabase
+      .from("generated_recipes")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (data.dogId) q = q.eq("dog_id", data.dogId);
+    const { data: rows } = await q;
+    return { recipes: rows ?? [] };
   });
