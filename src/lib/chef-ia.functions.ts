@@ -108,11 +108,7 @@ export const askChefIA = createServerFn({ method: "POST" })
 
     const dog = await loadDog(supabase as unknown as Supa, data.dogId, userId);
     const history = await loadHistory(supabase as unknown as Supa, dog?.id, userId);
-    const blocked = [
-      ...(dog?.allergies ?? []),
-      ...(dog?.forbidden_ingredients ?? []),
-      ...(dog?.health_conditions ?? []).length ? [] : [],
-    ];
+    const blocked = [...(dog?.allergies ?? []), ...(dog?.forbidden_ingredients ?? [])];
 
     try {
       const reply = await askChefWithOpenAI({
