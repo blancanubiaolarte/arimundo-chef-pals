@@ -4,6 +4,9 @@ import { AppShell } from "@/components/layout/AppShell";
 import { AuthGate } from "@/components/common/AuthGate";
 import { useApp } from "@/lib/app-store";
 import { planById } from "@/lib/plans";
+import { useEffect, useState } from "react";
+import { getUsageSummary } from "@/lib/usage.functions";
+import type { UsageSummary } from "@/lib/usage-limits";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({
@@ -23,6 +26,57 @@ export const Route = createFileRoute("/perfil")({
     </AuthGate>
   ),
 });
+
+function UsageCard() {
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void getUsageSummary()
+      .then((u) => {
+        if (alive) setUsage(u as UsageSummary);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (!usage) return null;
+  const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
+
+  return (
+    <section className="rounded-2xl bg-card p-4 shadow-soft">
+      <h2 className="font-display text-base font-extrabold">Recetas con Chef IA</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Plan {usage.planName} · {usage.remaining} restantes este {usage.period}
+      </p>
+      <p className="mt-2 font-display text-lg font-extrabold">
+        {usage.used} / {usage.limit} recetas
+      </p>
+      <div
+        className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Se renueva el {new Date(usage.renewsAt).toLocaleDateString("es")}
+      </p>
+      {usage.remaining === 0 && (
+        <Link
+          to="/planes"
+          className="mt-3 inline-block rounded-xl bg-brand px-4 py-2 text-xs font-extrabold text-primary-foreground"
+        >
+          Actualizar suscripción
+        </Link>
+      )}
+    </section>
+  );
+}
 
 function ProfilePage() {
   const {
@@ -68,6 +122,8 @@ function ProfilePage() {
             Gestionar suscripción
           </Link>
         </section>
+
+        <UsageCard />
 
         <section className="grid grid-cols-3 gap-3">
           {[
