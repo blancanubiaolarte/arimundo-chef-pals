@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Check, Crown } from "lucide-react";
+import { createCheckoutSession } from "@/lib/stripe.functions";
 import { AppShell } from "@/components/layout/AppShell";
 import { useApp } from "@/lib/app-store";
 import { PLANS } from "@/lib/plans";
