@@ -24,6 +24,7 @@ export const Route = createFileRoute("/planes")({
 
 function PlansPage() {
   const { user, trialDaysLeft, isTrialActive, choosePlan, dogs } = useApp();
+  const startCheckout = useServerFn(createCheckoutSession);
   const navigate = useNavigate();
 
   return (
