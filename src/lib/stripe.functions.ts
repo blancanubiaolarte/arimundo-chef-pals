@@ -1,40 +1,106 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/**
- * Arquitectura lista para Stripe (todavía NO conectado).
- *
- * Cuando se active el pago, solo hay que rellenar estos handlers con las
- * llamadas a la API de Stripe usando STRIPE_SECRET_KEY (secreto del backend).
- * El frontend nunca debe ver claves.
- */
+export type PlanId = "basico" | "familiar" | "pro" | "premium";
 
-export type PlanId = "basico" | "familiar" | "premium";
+/** Indica si las variables de entorno de Stripe están configuradas (sin exponer valores). */
+export const getStripeStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const { stripeConfigStatus } = await import("@/lib/stripe.server");
+  return stripeConfigStatus();
+});
 
-export const PLAN_PRICES: Record<PlanId, number> = {
-  basico: 2.99,
-  familiar: 5.99,
-  premium: 9.99,
-};
-
-/** Crea la sesión de Checkout para el plan elegido. */
+/** Crea la sesión de Checkout para el plan elegido y devuelve la URL de Stripe. */
 export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { plan: PlanId }) => input)
-  .handler(async ({ data }) => {
-    // TODO(Stripe): crear la sesión de Checkout y devolver { url }.
-    return {
-      ready: false as const,
-      plan: data.plan,
-      price: PLAN_PRICES[data.plan],
-      message: "Stripe todavía no está conectado.",
-    };
+  .handler(async ({ data, context }) => {
+    const { createCheckout, ensureCustomer, MissingStripeConfigError } = await import(
+      "@/lib/stripe.server"
+    );
+    const { supabase, userId, claims } = context;
+
+    try {
+      const { data: existing } = await supabase
+        .from("subscriptions")
+        .select("stripe_customer_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const email = (claims as { email?: string } | null)?.email ?? null;
+      const customerId = await ensureCustomer({
+        email,
+        userId,
+        existingCustomerId: existing?.stripe_customer_id ?? null,
+      });
+
+      const origin = new URL(getRequest().url).origin;
+      const session = await createCheckout({
+        customerId,
+        plan: data.plan,
+        userId,
+        successUrl: `${origin}/perfil?checkout=exito`,
+        cancelUrl: `${origin}/planes?checkout=cancelado`,
+      });
+
+      await supabase.from("subscriptions").upsert(
+        {
+          user_id: userId,
+          plan: data.plan === "pro" ? "familiar" : data.plan,
+          status: existing ? "incomplete" : "incomplete",
+          stripe_customer_id: customerId,
+        },
+        { onConflict: "user_id" },
+      );
+
+      if (!session.url) {
+        return { ready: false as const, message: "Stripe no devolvió una URL de pago." };
+      }
+      return { ready: true as const, url: session.url, sessionId: session.id };
+    } catch (error) {
+      const message =
+        error instanceof MissingStripeConfigError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "No se pudo iniciar el pago.";
+      return { ready: false as const, message };
+    }
   });
 
 /** Abre el portal del cliente para gestionar o cancelar la suscripción. */
 export const createCustomerPortalSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    // TODO(Stripe): crear la sesión del Customer Portal y devolver { url }.
-    return { ready: false as const, message: "Stripe todavía no está conectado." };
+  .handler(async ({ context }) => {
+    const { createPortal, MissingStripeConfigError } = await import("@/lib/stripe.server");
+    const { supabase, userId } = context;
+    try {
+      const { data: existing } = await supabase
+        .from("subscriptions")
+        .select("stripe_customer_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!existing?.stripe_customer_id) {
+        return {
+          ready: false as const,
+          message: "Todavía no tienes una suscripción activa para gestionar.",
+        };
+      }
+
+      const origin = new URL(getRequest().url).origin;
+      const session = await createPortal({
+        customerId: existing.stripe_customer_id,
+        returnUrl: `${origin}/perfil`,
+      });
+      return { ready: true as const, url: session.url };
+    } catch (error) {
+      const message =
+        error instanceof MissingStripeConfigError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "No se pudo abrir el portal de suscripción.";
+      return { ready: false as const, message };
+    }
   });
