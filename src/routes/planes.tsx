@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Check, Crown } from "lucide-react";
+import { createCheckoutSession } from "@/lib/stripe.functions";
 import { AppShell } from "@/components/layout/AppShell";
 import { useApp } from "@/lib/app-store";
 import { PLANS } from "@/lib/plans";
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/planes")({
 
 function PlansPage() {
   const { user, trialDaysLeft, isTrialActive, choosePlan, dogs } = useApp();
+  const startCheckout = useServerFn(createCheckoutSession);
   const navigate = useNavigate();
 
   return (
@@ -72,7 +75,16 @@ function PlansPage() {
               <button
                 type="button"
                 disabled={current}
-                onClick={() => {
+                onClick={async () => {
+                  try {
+                    const result = await startCheckout({ data: { plan: plan.id as "basico" | "familiar" | "premium" } });
+                    if (result.ready && "url" in result && result.url) {
+                      window.location.href = result.url;
+                      return;
+                    }
+                  } catch {
+                    // Stripe no disponible: continuamos con la selección local.
+                  }
                   choosePlan(plan.id);
                   navigate({ to: dogs.length ? "/" : "/onboarding/perro" });
                 }}

@@ -26,6 +26,7 @@ import { Route as PerrosIndexRouteImport } from './routes/perros.index'
 import { Route as PerrosDogIdRouteImport } from './routes/perros.$dogId'
 import { Route as RecetasIndexRouteImport } from './routes/recetas.index'
 import { Route as RecetasSlugRouteImport } from './routes/recetas.$slug'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,6 +113,11 @@ const RecetasSlugRoute = RecetasSlugRouteImport.update({
   path: '/recetas/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe-webhook',
+  path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/recetas/$slug': typeof RecetasSlugRoute
   '/perros/': typeof PerrosIndexRoute
   '/recetas/': typeof RecetasIndexRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/recetas/$slug': typeof RecetasSlugRoute
   '/perros': typeof PerrosIndexRoute
   '/recetas': typeof RecetasIndexRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/recetas/$slug': typeof RecetasSlugRoute
   '/perros/': typeof PerrosIndexRoute
   '/recetas/': typeof RecetasIndexRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/recetas/$slug'
     | '/perros/'
     | '/recetas/'
+    | '/api/public/stripe-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/recetas/$slug'
     | '/perros'
     | '/recetas'
+    | '/api/public/stripe-webhook'
   id:
     | '__root__'
     | '/'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/recetas/$slug'
     | '/perros/'
     | '/recetas/'
+    | '/api/public/stripe-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   RecetasSlugRoute: typeof RecetasSlugRoute
   PerrosIndexRoute: typeof PerrosIndexRoute
   RecetasIndexRoute: typeof RecetasIndexRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -371,6 +384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecetasSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/stripe-webhook': {
+      id: '/api/public/stripe-webhook'
+      path: '/api/public/stripe-webhook'
+      fullPath: '/api/public/stripe-webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -401,6 +421,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecetasSlugRoute: RecetasSlugRoute,
   PerrosIndexRoute: PerrosIndexRoute,
   RecetasIndexRoute: RecetasIndexRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
