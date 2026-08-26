@@ -77,7 +77,7 @@ function PlansPage() {
                 disabled={current}
                 onClick={async () => {
                   try {
-                    const result = await startCheckout({ data: { plan: plan.id } });
+                    const result = await startCheckout({ data: { plan: plan.id as "basico" | "familiar" | "premium" } });
                     if (result.ready && "url" in result && result.url) {
                       window.location.href = result.url;
                       return;
