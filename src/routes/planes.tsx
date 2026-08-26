@@ -72,7 +72,16 @@ function PlansPage() {
               <button
                 type="button"
                 disabled={current}
-                onClick={() => {
+                onClick={async () => {
+                  try {
+                    const result = await startCheckout({ data: { plan: plan.id } });
+                    if (result.ready && "url" in result && result.url) {
+                      window.location.href = result.url;
+                      return;
+                    }
+                  } catch {
+                    // Stripe no disponible: continuamos con la selección local.
+                  }
                   choosePlan(plan.id);
                   navigate({ to: dogs.length ? "/" : "/onboarding/perro" });
                 }}
