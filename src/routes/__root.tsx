@@ -15,6 +15,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 // exista una única instancia del módulo (y del contexto) en el bundle.
 import { AppProvider } from "@/lib/app-store";
 import { RegisterSW } from "@/components/pwa/RegisterSW";
+import { AppSplash } from "@/components/common/AppSplash";
+import { NetworkStatus } from "@/components/common/NetworkStatus";
 
 function NotFoundComponent() {
   return (
@@ -111,7 +113,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/icons/apple-touch-icon-180.png" },
+      { rel: "apple-touch-icon", sizes: "167x167", href: "/icons/apple-touch-icon-167.png" },
+      { rel: "apple-touch-icon", sizes: "152x152", href: "/icons/apple-touch-icon-152.png" },
+      { rel: "apple-touch-icon", sizes: "120x120", href: "/icons/apple-touch-icon-120.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -140,6 +145,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider>
+        <AppSplash />
+        <NetworkStatus />
+        <RegisterSW />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </AppProvider>

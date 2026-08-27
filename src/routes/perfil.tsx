@@ -1,5 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CreditCard, LogOut, Shield, TrendingUp, Bell, Award } from "lucide-react";
+import {
+  CreditCard,
+  LogOut,
+  Shield,
+  TrendingUp,
+  Bell,
+  Award,
+  LifeBuoy,
+  Mail,
+  Info,
+  FileText,
+  Trash2,
+} from "lucide-react";
+import { Disclaimer } from "@/components/common/Disclaimer";
+import { APP_VERSION, APP_BUILD } from "@/lib/app-version";
 import { AppShell } from "@/components/layout/AppShell";
 import { AuthGate } from "@/components/common/AuthGate";
 import { useApp } from "@/lib/app-store";
@@ -189,6 +203,33 @@ function ProfilePage() {
           </Link>
         </section>
 
+        <section className="divide-y divide-border/60 overflow-hidden rounded-2xl bg-card shadow-soft">
+          <Link to="/soporte" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <LifeBuoy className="size-4 text-wood" /> Soporte y ayuda
+          </Link>
+          <Link to="/contacto" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <Mail className="size-4 text-wood" /> Contacto
+          </Link>
+          <Link to="/acerca" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <Info className="size-4 text-wood" /> Acerca de la app
+          </Link>
+          <Link to="/privacidad" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <Shield className="size-4 text-wood" /> Política de privacidad
+          </Link>
+          <Link to="/terminos" className="flex items-center gap-3 p-4 text-sm font-semibold">
+            <FileText className="size-4 text-wood" /> Términos y condiciones
+          </Link>
+          <Link
+            to="/eliminar-cuenta"
+            className="flex items-center gap-3 p-4 text-sm font-semibold text-destructive"
+          >
+            <Trash2 className="size-4" /> Eliminar cuenta y datos
+          </Link>
+        </section>
+
+        <Disclaimer />
+
+
         <button
           type="button"
           onClick={() => {
@@ -199,6 +240,10 @@ function ProfilePage() {
         >
           <LogOut className="size-4" /> Cerrar sesión
         </button>
+
+        <p className="pb-2 text-center text-[11px] text-muted-foreground">
+          ARIMUNDO MASCOTAS · versión {APP_VERSION} (build {APP_BUILD})
+        </p>
       </div>
     </AppShell>
   );
