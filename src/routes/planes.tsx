@@ -109,7 +109,12 @@ function PlansPage() {
                     : "bg-brand text-primary-foreground shadow-soft"
                 }`}
               >
-                {current ? "Tu plan actual" : `Elegir ${plan.name.replace("Plan ", "")}`}
+                {current
+                  ? "Tu plan actual"
+                  : loadingPlan === plan.id
+                    ? "Abriendo pago seguro…"
+                    : `Elegir ${plan.name.replace("Plan ", "")}`}
+
               </button>
             </article>
           );
