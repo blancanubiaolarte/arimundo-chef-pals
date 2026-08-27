@@ -57,26 +57,44 @@ export async function createOpenAIResponse(
     };
   }
 
-  const res = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      // Tiempo máximo de espera: evita que la app se quede colgada.
+      signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
+    });
+  } catch (err) {
+    const name = err instanceof Error ? err.name : "";
+    if (name === "TimeoutError" || name === "AbortError") {
+      throw new Error(
+        "El Chef IA está tardando más de lo normal. Vuelve a intentarlo en unos segundos.",
+      );
+    }
+    throw new Error(
+      "No pudimos conectar con el Chef IA. Revisa tu conexión a internet e inténtalo de nuevo.",
+    );
+  }
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     if (res.status === 401 || res.status === 403) {
       throw new Error(
-        "La clave OPENAI_API_KEY no es válida o no tiene permisos para este modelo.",
+        "El Chef IA no está disponible ahora mismo. Ya estamos trabajando en ello; inténtalo más tarde.",
       );
     }
     if (res.status === 429) {
-      throw new Error("OpenAI está limitando las solicitudes. Intenta de nuevo en unos segundos.");
+      throw new Error("Hay mucha demanda en este momento. Intenta de nuevo en unos segundos.");
     }
-    throw new Error(`Error de OpenAI (${res.status}): ${detail.slice(0, 500)}`);
+    if (res.status >= 500) {
+      throw new Error("El Chef IA tuvo un problema temporal. Inténtalo de nuevo en un minuto.");
+    }
+    throw new Error(`No pudimos generar la respuesta (${res.status}). ${detail.slice(0, 200)}`);
   }
 
   const json = (await res.json()) as {

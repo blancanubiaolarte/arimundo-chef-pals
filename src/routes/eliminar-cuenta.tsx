@@ -1,5 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { deleteMyAccount } from "@/lib/account.functions";
+import { useApp } from "@/lib/app-store";
+import { SUPPORT_EMAIL } from "@/lib/app-version";
 
 export const Route = createFileRoute("/eliminar-cuenta")({
   head: () => ({
@@ -18,26 +23,41 @@ export const Route = createFileRoute("/eliminar-cuenta")({
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://arimundo-chef-pals.lovable.app/eliminar-cuenta" }],
   }),
   component: DeleteAccountPage,
 });
 
 function DeleteAccountPage() {
+  const { user, signOut } = useApp();
+  const navigate = useNavigate();
+  const runDelete = useServerFn(deleteMyAccount);
+  const [confirmText, setConfirmText] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  const canDelete = confirmText.trim().toUpperCase() === "ELIMINAR";
+
+  async function handleDelete() {
+    setStatus("loading");
+    setError(null);
+    try {
+      await runDelete({ data: {} } as never);
+      await signOut();
+      navigate({ to: "/auth", replace: true });
+    } catch (e) {
+      setStatus("error");
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : `No pudimos eliminar la cuenta. Revisa tu conexión o escríbenos a ${SUPPORT_EMAIL}.`,
+      );
+    }
+  }
+
   return (
     <AppShell title="Eliminar cuenta" subtitle="Borrado de cuenta y datos">
       <div className="space-y-3">
-        <section className="rounded-2xl border border-border/60 bg-card p-4">
-          <h2 className="font-display text-base font-bold">Cómo solicitarlo</h2>
-          <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-            <li>
-              Escribe a <span className="font-semibold text-foreground">soporte@arimundomascotas.com</span>{" "}
-              desde el correo con el que te registraste, con el asunto “Eliminar cuenta”.
-            </li>
-            <li>Confirmaremos la solicitud en un máximo de 48 horas.</li>
-            <li>Los datos se eliminan de forma definitiva en un plazo de 30 días.</li>
-          </ol>
-        </section>
-
         <section className="rounded-2xl border border-border/60 bg-card p-4">
           <h2 className="font-display text-base font-bold">Datos que se eliminan</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
@@ -47,6 +67,51 @@ function DeleteAccountPage() {
             <li>Alacena, listas de compras y planes semanales</li>
             <li>Conversaciones y recetas generadas por el Chef IA</li>
           </ul>
+        </section>
+
+        <section className="rounded-2xl border border-destructive/40 bg-card p-4">
+          <h2 className="font-display text-base font-bold text-destructive">
+            Eliminar definitivamente
+          </h2>
+          {user ? (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Esta acción es irreversible. Escribe <strong>ELIMINAR</strong> para confirmar.
+              </p>
+              <label htmlFor="confirmar" className="sr-only">
+                Escribe ELIMINAR para confirmar
+              </label>
+              <input
+                id="confirmar"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="ELIMINAR"
+                autoComplete="off"
+                className="mt-3 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-destructive"
+              />
+              <button
+                type="button"
+                disabled={!canDelete || status === "loading"}
+                onClick={handleDelete}
+                className="mt-3 w-full rounded-xl bg-destructive py-3 text-sm font-extrabold text-destructive-foreground disabled:opacity-50"
+              >
+                {status === "loading" ? "Eliminando…" : "Eliminar mi cuenta y mis datos"}
+              </button>
+              {error ? (
+                <p role="alert" className="mt-2 text-sm text-destructive">
+                  {error}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Inicia sesión para eliminar tu cuenta, o escríbenos a{" "}
+              <a className="font-semibold text-foreground underline" href={`mailto:${SUPPORT_EMAIL}`}>
+                {SUPPORT_EMAIL}
+              </a>
+              .
+            </p>
+          )}
         </section>
 
         <section className="rounded-2xl border border-border/60 bg-card p-4">
