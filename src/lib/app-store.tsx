@@ -109,6 +109,9 @@ interface AppContextValue extends PersistedState {
   signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
   choosePlan: (plan: PlanId) => void;
+  /** Vuelve a leer el perfil (plan, suscripción) desde la base de datos. */
+  refreshUser: () => Promise<void>;
+
   addDog: (dog: Omit<Dog, "id" | "userId" | "createdAt">) => Dog;
   updateDog: (id: string, patch: Partial<Dog>) => void;
   removeDog: (id: string) => void;
