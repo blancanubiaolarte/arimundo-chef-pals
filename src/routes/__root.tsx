@@ -17,6 +17,7 @@ import { AppProvider } from "@/lib/app-store";
 import { RegisterSW } from "@/components/pwa/RegisterSW";
 import { AppSplash } from "@/components/common/AppSplash";
 import { NetworkStatus } from "@/components/common/NetworkStatus";
+import { NativeBootstrap } from "@/components/native/NativeBootstrap";
 
 function NotFoundComponent() {
   return (
@@ -148,6 +149,7 @@ function RootComponent() {
         <AppSplash />
         <NetworkStatus />
         <RegisterSW />
+        <NativeBootstrap />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </AppProvider>
