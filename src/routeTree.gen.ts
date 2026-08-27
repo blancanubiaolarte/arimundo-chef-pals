@@ -16,10 +16,13 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BienestarRouteImport } from './routes/bienestar'
 import { Route as ChefRouteImport } from './routes/chef'
 import { Route as ComprasRouteImport } from './routes/compras'
+import { Route as EliminarCuentaRouteImport } from './routes/eliminar-cuenta'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanSemanalRouteImport } from './routes/plan-semanal'
 import { Route as PlanesRouteImport } from './routes/planes'
+import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
 import { Route as OnboardingPerroRouteImport } from './routes/onboarding.perro'
 import { Route as PerrosIndexRouteImport } from './routes/perros.index'
@@ -63,6 +66,11 @@ const ComprasRoute = ComprasRouteImport.update({
   path: '/compras',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EliminarCuentaRoute = EliminarCuentaRouteImport.update({
+  id: '/eliminar-cuenta',
+  path: '/eliminar-cuenta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -78,9 +86,19 @@ const PlanesRoute = PlanesRouteImport.update({
   path: '/planes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacidadRoute = PrivacidadRouteImport.update({
+  id: '/privacidad',
+  path: '/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminosRoute = TerminosRouteImport.update({
+  id: '/terminos',
+  path: '/terminos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRecuperarRoute = AuthRecuperarRouteImport.update({
@@ -127,10 +145,13 @@ export interface FileRoutesByFullPath {
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/eliminar-cuenta': typeof EliminarCuentaRoute
   '/perfil': typeof PerfilRoute
   '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
+  '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terminos': typeof TerminosRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
   '/perros/$dogId': typeof PerrosDogIdRoute
@@ -147,10 +168,13 @@ export interface FileRoutesByTo {
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/eliminar-cuenta': typeof EliminarCuentaRoute
   '/perfil': typeof PerfilRoute
   '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
+  '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terminos': typeof TerminosRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
   '/perros/$dogId': typeof PerrosDogIdRoute
@@ -168,10 +192,13 @@ export interface FileRoutesById {
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/eliminar-cuenta': typeof EliminarCuentaRoute
   '/perfil': typeof PerfilRoute
   '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
+  '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terminos': typeof TerminosRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
   '/perros/$dogId': typeof PerrosDogIdRoute
@@ -190,10 +217,13 @@ export interface FileRouteTypes {
     | '/bienestar'
     | '/chef'
     | '/compras'
+    | '/eliminar-cuenta'
     | '/perfil'
     | '/plan-semanal'
     | '/planes'
+    | '/privacidad'
     | '/reset-password'
+    | '/terminos'
     | '/auth/recuperar'
     | '/onboarding/perro'
     | '/perros/$dogId'
@@ -210,10 +240,13 @@ export interface FileRouteTypes {
     | '/bienestar'
     | '/chef'
     | '/compras'
+    | '/eliminar-cuenta'
     | '/perfil'
     | '/plan-semanal'
     | '/planes'
+    | '/privacidad'
     | '/reset-password'
+    | '/terminos'
     | '/auth/recuperar'
     | '/onboarding/perro'
     | '/perros/$dogId'
@@ -230,10 +263,13 @@ export interface FileRouteTypes {
     | '/bienestar'
     | '/chef'
     | '/compras'
+    | '/eliminar-cuenta'
     | '/perfil'
     | '/plan-semanal'
     | '/planes'
+    | '/privacidad'
     | '/reset-password'
+    | '/terminos'
     | '/auth/recuperar'
     | '/onboarding/perro'
     | '/perros/$dogId'
@@ -251,10 +287,13 @@ export interface RootRouteChildren {
   BienestarRoute: typeof BienestarRoute
   ChefRoute: typeof ChefRoute
   ComprasRoute: typeof ComprasRoute
+  EliminarCuentaRoute: typeof EliminarCuentaRoute
   PerfilRoute: typeof PerfilRoute
   PlanSemanalRoute: typeof PlanSemanalRoute
   PlanesRoute: typeof PlanesRoute
+  PrivacidadRoute: typeof PrivacidadRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TerminosRoute: typeof TerminosRoute
   OnboardingPerroRoute: typeof OnboardingPerroRoute
   PerrosDogIdRoute: typeof PerrosDogIdRoute
   RecetasSlugRoute: typeof RecetasSlugRoute
@@ -314,6 +353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComprasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/eliminar-cuenta': {
+      id: '/eliminar-cuenta'
+      path: '/eliminar-cuenta'
+      fullPath: '/eliminar-cuenta'
+      preLoaderRoute: typeof EliminarCuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/perfil': {
       id: '/perfil'
       path: '/perfil'
@@ -335,11 +381,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacidad': {
+      id: '/privacidad'
+      path: '/privacidad'
+      fullPath: '/privacidad'
+      preLoaderRoute: typeof PrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminos': {
+      id: '/terminos'
+      path: '/terminos'
+      fullPath: '/terminos'
+      preLoaderRoute: typeof TerminosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/recuperar': {
@@ -412,10 +472,13 @@ const rootRouteChildren: RootRouteChildren = {
   BienestarRoute: BienestarRoute,
   ChefRoute: ChefRoute,
   ComprasRoute: ComprasRoute,
+  EliminarCuentaRoute: EliminarCuentaRoute,
   PerfilRoute: PerfilRoute,
   PlanSemanalRoute: PlanSemanalRoute,
   PlanesRoute: PlanesRoute,
+  PrivacidadRoute: PrivacidadRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TerminosRoute: TerminosRoute,
   OnboardingPerroRoute: OnboardingPerroRoute,
   PerrosDogIdRoute: PerrosDogIdRoute,
   RecetasSlugRoute: RecetasSlugRoute,
