@@ -76,18 +76,29 @@ function PlansPage() {
                 type="button"
                 disabled={current}
                 onClick={async () => {
+                  setError(null);
+                  setLoadingPlan(plan.id);
                   try {
-                    const result = await startCheckout({ data: { plan: plan.id as "basico" | "familiar" | "premium" } });
+                    const result = await startCheckout({
+                      data: { plan: plan.id as "basico" | "familiar" | "premium" },
+                    });
                     if (result.ready && "url" in result && result.url) {
                       window.location.href = result.url;
                       return;
                     }
-                  } catch {
-                    // Stripe no disponible: continuamos con la selección local.
+                    setError(
+                      ("message" in result && result.message) ||
+                        "No se pudo iniciar el pago. Inténtalo de nuevo.",
+                    );
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : "No se pudo iniciar el pago.",
+                    );
+                  } finally {
+                    setLoadingPlan(null);
                   }
-                  choosePlan(plan.id);
-                  navigate({ to: dogs.length ? "/" : "/onboarding/perro" });
                 }}
+
                 className={`mt-4 w-full rounded-xl py-3 text-sm font-extrabold ${
                   current
                     ? "bg-muted text-muted-foreground"
