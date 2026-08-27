@@ -36,77 +36,100 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         };
         const obj = event.data.object;
 
-        const { planFromPriceId, retrieveSubscription } = await import("@/lib/stripe.server");
+        const { retrieveSubscription } = await import("@/lib/stripe.server");
+        const { applySubscriptionState, subscriptionToState } = await import(
+          "@/lib/subscriptions.server"
+        );
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        const upsert = async (row: {
-          user_id: string;
-          plan: "basico" | "familiar" | "premium";
-          status: string;
-          stripe_customer_id: string | null;
-          stripe_subscription_id: string | null;
-          current_period_end: string | null;
-        }) => {
-          await supabaseAdmin.from("subscriptions").upsert(row, { onConflict: "user_id" });
+        /** Encuentra el usuario por metadata, cliente o suscripción guardada. */
+        const resolveUserId = async (opts: {
+          metadataUserId?: string | null;
+          customerId?: string | null;
+          subscriptionId?: string | null;
+        }): Promise<string | null> => {
+          if (opts.metadataUserId) return opts.metadataUserId;
+          if (opts.subscriptionId) {
+            const { data } = await supabaseAdmin
+              .from("subscriptions")
+              .select("user_id")
+              .eq("stripe_subscription_id", opts.subscriptionId)
+              .maybeSingle();
+            if (data?.user_id) return data.user_id;
+          }
+          if (opts.customerId) {
+            const { data } = await supabaseAdmin
+              .from("subscriptions")
+              .select("user_id")
+              .eq("stripe_customer_id", opts.customerId)
+              .maybeSingle();
+            if (data?.user_id) return data.user_id;
+          }
+          return null;
         };
 
         try {
           if (event.type === "checkout.session.completed") {
-            const userId =
+            const metadataUserId =
               (obj["client_reference_id"] as string | null) ??
               ((obj["metadata"] as Record<string, string> | undefined)?.["user_id"] ?? null);
             const subscriptionId = obj["subscription"] as string | null;
+            const userId = await resolveUserId({
+              metadataUserId,
+              customerId: obj["customer"] as string | null,
+              subscriptionId,
+            });
             if (userId && subscriptionId) {
               const sub = await retrieveSubscription(subscriptionId);
-              const plan = planFromPriceId(sub.items?.data?.[0]?.price?.id) ?? "basico";
-              await upsert({
-                user_id: userId,
-                plan: plan === "pro" ? "familiar" : plan,
-                status: sub.status,
-                stripe_customer_id: sub.customer,
-                stripe_subscription_id: sub.id,
-                current_period_end: sub.current_period_end
-                  ? new Date(sub.current_period_end * 1000).toISOString()
-                  : null,
-              });
+              await applySubscriptionState(subscriptionToState(sub, userId));
             }
           } else if (
+            event.type === "customer.subscription.created" ||
             event.type === "customer.subscription.updated" ||
-            event.type === "customer.subscription.deleted" ||
-            event.type === "customer.subscription.created"
+            event.type === "customer.subscription.deleted"
           ) {
-            const userId = (obj["metadata"] as Record<string, string> | undefined)?.["user_id"];
-            const items = obj["items"] as
-              | { data: Array<{ price?: { id?: string } }> }
-              | undefined;
-            const plan = planFromPriceId(items?.data?.[0]?.price?.id) ?? "basico";
-            const status = event.type.endsWith("deleted")
-              ? "canceled"
-              : ((obj["status"] as string) ?? "active");
-            const periodEnd = obj["current_period_end"] as number | null;
-
+            const subscriptionId = obj["id"] as string;
+            const userId = await resolveUserId({
+              metadataUserId:
+                (obj["metadata"] as Record<string, string> | undefined)?.["user_id"] ?? null,
+              customerId: obj["customer"] as string | null,
+              subscriptionId,
+            });
             if (userId) {
-              await upsert({
-                user_id: userId,
-                plan: plan === "pro" ? "familiar" : plan,
-                status,
-                stripe_customer_id: (obj["customer"] as string) ?? null,
-                stripe_subscription_id: (obj["id"] as string) ?? null,
-                current_period_end: periodEnd
-                  ? new Date(periodEnd * 1000).toISOString()
-                  : null,
-              });
-            } else {
+              // Releemos desde Stripe para tener siempre la forma actual del objeto.
+              const sub = await retrieveSubscription(subscriptionId).catch(() => null);
+              const state = sub
+                ? subscriptionToState(sub, userId)
+                : {
+                    userId,
+                    plan: null,
+                    status: (obj["status"] as string) ?? "canceled",
+                    customerId: (obj["customer"] as string) ?? null,
+                    subscriptionId,
+                    currentPeriodEnd: null,
+                  };
+              if (event.type === "customer.subscription.deleted") {
+                state.status = "canceled";
+              }
+              await applySubscriptionState(state);
+            }
+          } else if (event.type === "invoice.payment_failed") {
+            // Stripe sigue reintentando: marcamos past_due sin quitar el acceso.
+            const subscriptionId =
+              (obj["subscription"] as string | null) ??
+              ((obj["parent"] as Record<string, unknown> | undefined)?.[
+                "subscription_details"
+              ] as { subscription?: string } | undefined)?.subscription ??
+              null;
+            const userId = await resolveUserId({
+              customerId: obj["customer"] as string | null,
+              subscriptionId,
+            });
+            if (userId) {
               await supabaseAdmin
                 .from("subscriptions")
-                .update({
-                  status,
-                  plan: plan === "pro" ? "familiar" : plan,
-                  current_period_end: periodEnd
-                    ? new Date(periodEnd * 1000).toISOString()
-                    : null,
-                })
-                .eq("stripe_subscription_id", obj["id"] as string);
+                .update({ status: "past_due" })
+                .eq("user_id", userId);
             }
           }
         } catch (error) {
