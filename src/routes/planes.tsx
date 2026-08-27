@@ -78,7 +78,7 @@ function PlansPage() {
               </ul>
               <button
                 type="button"
-                disabled={current}
+                disabled={current || loadingPlan === plan.id}
                 onClick={async () => {
                   setError(null);
                   setLoadingPlan(plan.id);
