@@ -1,4 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { createCustomerPortalSession, syncMySubscription } from "@/lib/stripe.functions";
+
 import {
   CreditCard,
   LogOut,
@@ -104,10 +107,56 @@ function ProfilePage() {
     activeDog,
     addWeightRecord,
     weights,
+    refreshUser,
   } = useApp();
   const navigate = useNavigate();
+  const openPortal = useServerFn(createCustomerPortalSession);
+  const syncSubscription = useServerFn(syncMySubscription);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const plan = planById(user?.plan ?? "basico");
   const dogWeights = weights.filter((w) => w.dogId === activeDog?.id);
+
+  // Al volver de Stripe verificamos el pago real antes de mostrar el plan.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "exito") return;
+
+    let alive = true;
+    setCheckoutMessage("Confirmando tu pago con Stripe…");
+
+    const verify = async (attempt: number): Promise<void> => {
+      try {
+        const result = await syncSubscription({});
+        if (!alive) return;
+        if (result.ready && "plan" in result && result.plan && result.plan !== "gratis") {
+          await refreshUser();
+          if (!alive) return;
+          setCheckoutMessage("¡Suscripción activada! Gracias por tu apoyo 🐾");
+          window.history.replaceState({}, "", "/perfil");
+          return;
+        }
+      } catch {
+        // Reintentamos: el webhook puede tardar unos segundos.
+      }
+      if (!alive) return;
+      if (attempt < 5) {
+        setTimeout(() => void verify(attempt + 1), 2000);
+      } else {
+        setCheckoutMessage(
+          "Tu pago se está procesando. El plan se activará en unos minutos.",
+        );
+        window.history.replaceState({}, "", "/perfil");
+      }
+    };
+
+    void verify(0);
+    return () => {
+      alive = false;
+    };
+  }, [syncSubscription, refreshUser]);
+
 
   return (
     <AppShell title="Perfil" subtitle={user?.email}>
@@ -129,13 +178,49 @@ function ProfilePage() {
               ? "Todas las funciones Premium desbloqueadas. Sin tarjeta."
               : `Hasta ${plan?.maxDogs ?? 1} perro(s) incluidos.`}
           </p>
-          <Link
-            to="/planes"
-            className="mt-3 inline-block rounded-xl bg-card px-4 py-2 text-xs font-extrabold text-foreground"
-          >
-            Gestionar suscripción
-          </Link>
+          {checkoutMessage && (
+            <p className="mt-2 text-xs font-bold opacity-95" role="status">
+              {checkoutMessage}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              to="/planes"
+              className="inline-block rounded-xl bg-card px-4 py-2 text-xs font-extrabold text-foreground"
+            >
+              Ver planes
+            </Link>
+            <button
+              type="button"
+              disabled={portalLoading}
+              onClick={async () => {
+                setPortalLoading(true);
+                setCheckoutMessage(null);
+                try {
+                  const result = await openPortal({});
+                  if (result.ready && "url" in result && result.url) {
+                    window.location.href = result.url;
+                    return;
+                  }
+                  setCheckoutMessage(
+                    ("message" in result && result.message) ||
+                      "No se pudo abrir el portal de suscripción.",
+                  );
+                } catch (e) {
+                  setCheckoutMessage(
+                    e instanceof Error ? e.message : "No se pudo abrir el portal.",
+                  );
+                } finally {
+                  setPortalLoading(false);
+                }
+              }}
+              className="inline-block rounded-xl bg-card px-4 py-2 text-xs font-extrabold text-foreground disabled:opacity-70"
+            >
+              {portalLoading ? "Abriendo…" : "Gestionar suscripción"}
+            </button>
+          </div>
         </section>
+
 
         <UsageCard />
 

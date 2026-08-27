@@ -1,10 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { Check, Crown } from "lucide-react";
 import { createCheckoutSession } from "@/lib/stripe.functions";
 import { AppShell } from "@/components/layout/AppShell";
 import { useApp } from "@/lib/app-store";
 import { PLANS } from "@/lib/plans";
+
 
 export const Route = createFileRoute("/planes")({
   head: () => ({
@@ -23,9 +25,11 @@ export const Route = createFileRoute("/planes")({
 });
 
 function PlansPage() {
-  const { user, trialDaysLeft, isTrialActive, choosePlan, dogs } = useApp();
+  const { user, trialDaysLeft, isTrialActive } = useApp();
   const startCheckout = useServerFn(createCheckoutSession);
-  const navigate = useNavigate();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
 
   return (
     <AppShell title="Planes" subtitle="Elige el plan ideal para tu manada">
@@ -74,35 +78,61 @@ function PlansPage() {
               </ul>
               <button
                 type="button"
-                disabled={current}
+                disabled={current || loadingPlan === plan.id}
                 onClick={async () => {
+                  setError(null);
+                  setLoadingPlan(plan.id);
                   try {
-                    const result = await startCheckout({ data: { plan: plan.id as "basico" | "familiar" | "premium" } });
+                    const result = await startCheckout({
+                      data: { plan: plan.id as "basico" | "familiar" | "premium" },
+                    });
                     if (result.ready && "url" in result && result.url) {
                       window.location.href = result.url;
                       return;
                     }
-                  } catch {
-                    // Stripe no disponible: continuamos con la selección local.
+                    setError(
+                      ("message" in result && result.message) ||
+                        "No se pudo iniciar el pago. Inténtalo de nuevo.",
+                    );
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : "No se pudo iniciar el pago.",
+                    );
+                  } finally {
+                    setLoadingPlan(null);
                   }
-                  choosePlan(plan.id);
-                  navigate({ to: dogs.length ? "/" : "/onboarding/perro" });
                 }}
+
                 className={`mt-4 w-full rounded-xl py-3 text-sm font-extrabold ${
                   current
                     ? "bg-muted text-muted-foreground"
                     : "bg-brand text-primary-foreground shadow-soft"
                 }`}
               >
-                {current ? "Tu plan actual" : `Elegir ${plan.name.replace("Plan ", "")}`}
+                {current
+                  ? "Tu plan actual"
+                  : loadingPlan === plan.id
+                    ? "Abriendo pago seguro…"
+                    : `Elegir ${plan.name.replace("Plan ", "")}`}
+
               </button>
             </article>
           );
         })}
 
+        {error && (
+          <p
+            role="alert"
+            className="rounded-2xl bg-destructive/10 p-3 text-center text-xs font-semibold text-destructive"
+          >
+            {error}
+          </p>
+        )}
+
         <p className="pb-2 text-center text-[11px] text-muted-foreground">
           Los pagos se procesarán con Stripe. Puedes cancelar cuando quieras.
         </p>
+
       </div>
     </AppShell>
   );

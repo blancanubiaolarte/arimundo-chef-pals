@@ -143,19 +143,56 @@ export async function createPortal(opts: {
   });
 }
 
-export async function retrieveSubscription(id: string) {
+export interface StripeSubscription {
+  id: string;
+  status: string;
+  customer: string;
+  current_period_end?: number | null;
+  cancel_at_period_end?: boolean;
+  metadata?: Record<string, string>;
+  items?: {
+    data: Array<{ price?: { id?: string }; current_period_end?: number | null }>;
+  };
+}
+
+export async function retrieveSubscription(id: string): Promise<StripeSubscription> {
   const res = await fetch(`${STRIPE_API}/subscriptions/${id}`, {
     headers: { Authorization: `Bearer ${getSecretKey()}` },
   });
   if (!res.ok) throw new Error(`No se pudo leer la suscripción (${res.status}).`);
-  return (await res.json()) as {
-    id: string;
-    status: string;
-    customer: string;
-    current_period_end: number | null;
-    metadata?: Record<string, string>;
-    items?: { data: Array<{ price?: { id?: string } }> };
-  };
+  return (await res.json()) as StripeSubscription;
+}
+
+/** Lista las suscripciones de un cliente (la más reciente primero). */
+export async function listCustomerSubscriptions(
+  customerId: string,
+): Promise<StripeSubscription[]> {
+  const res = await fetch(
+    `${STRIPE_API}/customers/${customerId}/subscriptions?limit=10`,
+    { headers: { Authorization: `Bearer ${getSecretKey()}` } },
+  );
+  if (!res.ok) throw new Error(`No se pudieron leer las suscripciones (${res.status}).`);
+  const json = (await res.json()) as { data?: StripeSubscription[] };
+  return json.data ?? [];
+}
+
+/**
+ * `current_period_end` vive en `items.data[0]` en las versiones recientes de la
+ * API de Stripe, con fallback al campo raíz de versiones anteriores.
+ */
+export function periodEndIso(
+  sub: Pick<StripeSubscription, "current_period_end" | "items">,
+): string | null {
+  const fromItem = sub.items?.data?.[0]?.current_period_end ?? null;
+  const seconds = fromItem ?? sub.current_period_end ?? null;
+  return seconds ? new Date(seconds * 1000).toISOString() : null;
+}
+
+/** Estados de Stripe en los que el usuario conserva el acceso de pago. */
+export const ACTIVE_STATUSES = ["active", "trialing", "past_due", "unpaid"] as const;
+
+export function statusGrantsAccess(status: string | null | undefined): boolean {
+  return (ACTIVE_STATUSES as readonly string[]).includes(status ?? "");
 }
 
 /** Deduce el plan de la app a partir del price ID de Stripe. */
@@ -166,3 +203,4 @@ export function planFromPriceId(priceId: string | undefined | null): StripePlanI
   if (priceId === process.env["STRIPE_PREMIUM_PRICE_ID"]) return "premium";
   return null;
 }
+

@@ -109,6 +109,9 @@ interface AppContextValue extends PersistedState {
   signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
   choosePlan: (plan: PlanId) => void;
+  /** Vuelve a leer el perfil (plan, suscripción) desde la base de datos. */
+  refreshUser: () => Promise<void>;
+
   addDog: (dog: Omit<Dog, "id" | "userId" | "createdAt">) => Dog;
   updateDog: (id: string, patch: Partial<Dog>) => void;
   removeDog: (id: string) => void;
@@ -349,6 +352,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (userId) db.setPlan(userId, plan);
         patch((prev) => (prev.user ? { ...prev, user: { ...prev.user, plan } } : prev));
       },
+      refreshUser: async () => {
+        const { data } = await supabase.auth.getSession();
+        await loadProfile(data.session);
+      },
+
 
       addDog: (dog) => {
         const created: Dog = {
@@ -747,7 +755,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }));
       },
     };
-  }, [state, hydrated, patch, catalogVersion]);
+  }, [state, hydrated, patch, catalogVersion, loadProfile]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
