@@ -15,10 +15,10 @@ export const Route = createFileRoute("/planes")({
       {
         name: "description",
         content:
-          "Compara los planes Básico, Familiar y Premium de ARIMUNDO MASCOTAS y elige el ideal para tu manada.",
+          "Compara los planes Básico, Plus y Premium de ARIMUNDO MASCOTAS y elige el ideal para tu manada.",
       },
       { property: "og:title", content: "Planes y suscripción | ARIMUNDO MASCOTAS" },
-      { property: "og:description", content: "Básico, Familiar y Premium desde $2.99 USD al mes." },
+      { property: "og:description", content: "Básico, Plus y Premium desde $4.99 USD al mes." },
     ],
   }),
   component: PlansPage,
