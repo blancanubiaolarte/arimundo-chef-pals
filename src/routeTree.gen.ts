@@ -10,18 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AcercaRouteImport } from './routes/acerca'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlacenaRouteImport } from './routes/alacena'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BienestarRouteImport } from './routes/bienestar'
 import { Route as ChefRouteImport } from './routes/chef'
 import { Route as ComprasRouteImport } from './routes/compras'
+import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as EliminarCuentaRouteImport } from './routes/eliminar-cuenta'
+import { Route as MantenimientoRouteImport } from './routes/mantenimiento'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanSemanalRouteImport } from './routes/plan-semanal'
 import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SoporteRouteImport } from './routes/soporte'
 import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as AuthRecuperarRouteImport } from './routes/auth.recuperar'
 import { Route as OnboardingPerroRouteImport } from './routes/onboarding.perro'
@@ -34,6 +38,11 @@ import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcercaRoute = AcercaRouteImport.update({
+  id: '/acerca',
+  path: '/acerca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -66,9 +75,19 @@ const ComprasRoute = ComprasRouteImport.update({
   path: '/compras',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactoRoute = ContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EliminarCuentaRoute = EliminarCuentaRouteImport.update({
   id: '/eliminar-cuenta',
   path: '/eliminar-cuenta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MantenimientoRoute = MantenimientoRouteImport.update({
+  id: '/mantenimiento',
+  path: '/mantenimiento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -94,6 +113,11 @@ const PrivacidadRoute = PrivacidadRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SoporteRoute = SoporteRouteImport.update({
+  id: '/soporte',
+  path: '/soporte',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TerminosRoute = TerminosRouteImport.update({
@@ -139,18 +163,22 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acerca': typeof AcercaRoute
   '/admin': typeof AdminRoute
   '/alacena': typeof AlacenaRoute
   '/auth': typeof AuthRouteWithChildren
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/contacto': typeof ContactoRoute
   '/eliminar-cuenta': typeof EliminarCuentaRoute
+  '/mantenimiento': typeof MantenimientoRoute
   '/perfil': typeof PerfilRoute
   '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/soporte': typeof SoporteRoute
   '/terminos': typeof TerminosRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
@@ -162,18 +190,22 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acerca': typeof AcercaRoute
   '/admin': typeof AdminRoute
   '/alacena': typeof AlacenaRoute
   '/auth': typeof AuthRouteWithChildren
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/contacto': typeof ContactoRoute
   '/eliminar-cuenta': typeof EliminarCuentaRoute
+  '/mantenimiento': typeof MantenimientoRoute
   '/perfil': typeof PerfilRoute
   '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/soporte': typeof SoporteRoute
   '/terminos': typeof TerminosRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
@@ -186,18 +218,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/acerca': typeof AcercaRoute
   '/admin': typeof AdminRoute
   '/alacena': typeof AlacenaRoute
   '/auth': typeof AuthRouteWithChildren
   '/bienestar': typeof BienestarRoute
   '/chef': typeof ChefRoute
   '/compras': typeof ComprasRoute
+  '/contacto': typeof ContactoRoute
   '/eliminar-cuenta': typeof EliminarCuentaRoute
+  '/mantenimiento': typeof MantenimientoRoute
   '/perfil': typeof PerfilRoute
   '/plan-semanal': typeof PlanSemanalRoute
   '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/soporte': typeof SoporteRoute
   '/terminos': typeof TerminosRoute
   '/auth/recuperar': typeof AuthRecuperarRoute
   '/onboarding/perro': typeof OnboardingPerroRoute
@@ -211,18 +247,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/acerca'
     | '/admin'
     | '/alacena'
     | '/auth'
     | '/bienestar'
     | '/chef'
     | '/compras'
+    | '/contacto'
     | '/eliminar-cuenta'
+    | '/mantenimiento'
     | '/perfil'
     | '/plan-semanal'
     | '/planes'
     | '/privacidad'
     | '/reset-password'
+    | '/soporte'
     | '/terminos'
     | '/auth/recuperar'
     | '/onboarding/perro'
@@ -234,18 +274,22 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/acerca'
     | '/admin'
     | '/alacena'
     | '/auth'
     | '/bienestar'
     | '/chef'
     | '/compras'
+    | '/contacto'
     | '/eliminar-cuenta'
+    | '/mantenimiento'
     | '/perfil'
     | '/plan-semanal'
     | '/planes'
     | '/privacidad'
     | '/reset-password'
+    | '/soporte'
     | '/terminos'
     | '/auth/recuperar'
     | '/onboarding/perro'
@@ -257,18 +301,22 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/acerca'
     | '/admin'
     | '/alacena'
     | '/auth'
     | '/bienestar'
     | '/chef'
     | '/compras'
+    | '/contacto'
     | '/eliminar-cuenta'
+    | '/mantenimiento'
     | '/perfil'
     | '/plan-semanal'
     | '/planes'
     | '/privacidad'
     | '/reset-password'
+    | '/soporte'
     | '/terminos'
     | '/auth/recuperar'
     | '/onboarding/perro'
@@ -281,18 +329,22 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcercaRoute: typeof AcercaRoute
   AdminRoute: typeof AdminRoute
   AlacenaRoute: typeof AlacenaRoute
   AuthRoute: typeof AuthRouteWithChildren
   BienestarRoute: typeof BienestarRoute
   ChefRoute: typeof ChefRoute
   ComprasRoute: typeof ComprasRoute
+  ContactoRoute: typeof ContactoRoute
   EliminarCuentaRoute: typeof EliminarCuentaRoute
+  MantenimientoRoute: typeof MantenimientoRoute
   PerfilRoute: typeof PerfilRoute
   PlanSemanalRoute: typeof PlanSemanalRoute
   PlanesRoute: typeof PlanesRoute
   PrivacidadRoute: typeof PrivacidadRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SoporteRoute: typeof SoporteRoute
   TerminosRoute: typeof TerminosRoute
   OnboardingPerroRoute: typeof OnboardingPerroRoute
   PerrosDogIdRoute: typeof PerrosDogIdRoute
@@ -309,6 +361,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acerca': {
+      id: '/acerca'
+      path: '/acerca'
+      fullPath: '/acerca'
+      preLoaderRoute: typeof AcercaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -353,11 +412,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComprasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contacto': {
+      id: '/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof ContactoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/eliminar-cuenta': {
       id: '/eliminar-cuenta'
       path: '/eliminar-cuenta'
       fullPath: '/eliminar-cuenta'
       preLoaderRoute: typeof EliminarCuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mantenimiento': {
+      id: '/mantenimiento'
+      path: '/mantenimiento'
+      fullPath: '/mantenimiento'
+      preLoaderRoute: typeof MantenimientoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -393,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/soporte': {
+      id: '/soporte'
+      path: '/soporte'
+      fullPath: '/soporte'
+      preLoaderRoute: typeof SoporteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terminos': {
@@ -466,18 +546,22 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcercaRoute: AcercaRoute,
   AdminRoute: AdminRoute,
   AlacenaRoute: AlacenaRoute,
   AuthRoute: AuthRouteWithChildren,
   BienestarRoute: BienestarRoute,
   ChefRoute: ChefRoute,
   ComprasRoute: ComprasRoute,
+  ContactoRoute: ContactoRoute,
   EliminarCuentaRoute: EliminarCuentaRoute,
+  MantenimientoRoute: MantenimientoRoute,
   PerfilRoute: PerfilRoute,
   PlanSemanalRoute: PlanSemanalRoute,
   PlanesRoute: PlanesRoute,
   PrivacidadRoute: PrivacidadRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SoporteRoute: SoporteRoute,
   TerminosRoute: TerminosRoute,
   OnboardingPerroRoute: OnboardingPerroRoute,
   PerrosDogIdRoute: PerrosDogIdRoute,
