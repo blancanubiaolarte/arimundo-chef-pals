@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 // Debe usar el mismo especificador ("@/...") que el resto de la app para que
 // exista una única instancia del módulo (y del contexto) en el bundle.
 import { AppProvider } from "@/lib/app-store";
+import { RegisterSW } from "@/components/pwa/RegisterSW";
 
 function NotFoundComponent() {
   return (
@@ -87,6 +88,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Asistente inteligente de cocina canina: recetas caseras personalizadas para tu perro cada día.",
       },
       { name: "theme-color", content: "#F6B221" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "ARIMUNDO" },
+      { name: "application-name", content: "ARIMUNDO MASCOTAS" },
       { property: "og:title", content: "ARIMUNDO MASCOTAS" },
       {
         property: "og:description",
@@ -104,6 +110,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap",
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
