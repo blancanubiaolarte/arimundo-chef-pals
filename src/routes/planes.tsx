@@ -120,9 +120,19 @@ function PlansPage() {
           );
         })}
 
+        {error && (
+          <p
+            role="alert"
+            className="rounded-2xl bg-destructive/10 p-3 text-center text-xs font-semibold text-destructive"
+          >
+            {error}
+          </p>
+        )}
+
         <p className="pb-2 text-center text-[11px] text-muted-foreground">
           Los pagos se procesarán con Stripe. Puedes cancelar cuando quieras.
         </p>
+
       </div>
     </AppShell>
   );
