@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.app.arimundo.mascotas"],
+        "components": [{ "/": "/*", "comment": "Universal Links: todas las rutas de la app" }]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAMID.app.arimundo.mascotas"]
+  }
+}
