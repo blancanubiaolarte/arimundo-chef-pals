@@ -18,9 +18,11 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     const { createCheckout, ensureCustomer, MissingStripeConfigError } = await import(
       "@/lib/stripe.server"
     );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId, claims } = context;
 
     try {
+      // Lectura con el cliente del usuario (RLS: solo su propia fila).
       const { data: existing } = await supabase
         .from("subscriptions")
         .select("stripe_customer_id")
@@ -43,11 +45,13 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         cancelUrl: `${origin}/planes?checkout=cancelado`,
       });
 
-      await supabase.from("subscriptions").upsert(
+      // Escritura con service role: la tabla es de solo lectura para el usuario.
+      // No otorga plan: sólo guarda el customer para reutilizarlo y poder abrir el portal.
+      await supabaseAdmin.from("subscriptions").upsert(
         {
           user_id: userId,
           plan: data.plan === "pro" ? "familiar" : data.plan,
-          status: existing ? "incomplete" : "incomplete",
+          status: "incomplete",
           stripe_customer_id: customerId,
         },
         { onConflict: "user_id" },
@@ -102,5 +106,49 @@ export const createCustomerPortalSession = createServerFn({ method: "POST" })
             ? error.message
             : "No se pudo abrir el portal de suscripción.";
       return { ready: false as const, message };
+    }
+  });
+
+/**
+ * Verificación segura tras volver de Checkout: consulta el estado real en Stripe
+ * y actualiza la base de datos si el webhook aún no ha llegado.
+ * Nunca otorga un plan sin una suscripción confirmada por Stripe.
+ */
+export const syncMySubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    try {
+      const { data: existing } = await supabase
+        .from("subscriptions")
+        .select("stripe_customer_id, plan, status, current_period_end")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!existing?.stripe_customer_id) {
+        return { ready: true as const, plan: "gratis", status: "none" };
+      }
+
+      const { listCustomerSubscriptions, statusGrantsAccess } = await import(
+        "@/lib/stripe.server"
+      );
+      const { applySubscriptionState, subscriptionToState } = await import(
+        "@/lib/subscriptions.server"
+      );
+
+      const subs = await listCustomerSubscriptions(existing.stripe_customer_id);
+      const active = subs.find((s) => statusGrantsAccess(s.status)) ?? subs[0];
+      if (!active) {
+        return { ready: true as const, plan: "gratis", status: "none" };
+      }
+
+      const state = subscriptionToState(active, userId);
+      const plan = await applySubscriptionState(state);
+      return { ready: true as const, plan, status: active.status };
+    } catch (error) {
+      return {
+        ready: false as const,
+        message: error instanceof Error ? error.message : "No se pudo verificar la suscripción.",
+      };
     }
   });
