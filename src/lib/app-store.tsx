@@ -755,7 +755,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }));
       },
     };
-  }, [state, hydrated, patch, catalogVersion]);
+  }, [state, hydrated, patch, catalogVersion, loadProfile]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
