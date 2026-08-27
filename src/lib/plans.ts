@@ -6,7 +6,7 @@ export const PLANS: Plan[] = [
   {
     id: "basico",
     name: "Plan Básico",
-    price: 2.99,
+    price: 4.99,
     maxDogs: 1,
     tagline: "Para un compañero",
     features: [
@@ -18,8 +18,8 @@ export const PLANS: Plan[] = [
   },
   {
     id: "familiar",
-    name: "Plan Familiar",
-    price: 5.99,
+    name: "Plan Plus",
+    price: 7.99,
     maxDogs: 2,
     tagline: "Para dos peluditos",
     highlighted: true,
@@ -33,12 +33,12 @@ export const PLANS: Plan[] = [
   {
     id: "premium",
     name: "Plan Premium",
-    price: 9.99,
+    price: 10.99,
     maxDogs: 5,
     tagline: "Para toda la manada",
     features: [
       "Hasta 5 perros",
-      "Todo lo del plan Familiar",
+      "Todo lo del plan Plus",
       "Seguimiento de progreso y peso",
       "Notificaciones y logros",
     ],

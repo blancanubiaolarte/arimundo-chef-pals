@@ -22,7 +22,7 @@ export const PLAN_LIMITS: Record<UsagePlanId, PlanLimit> = {
   premium: { id: "premium", name: "Premium", price: 10.99, monthly: 200, daily: null },
   // Compatibilidad con los planes históricos de la app
   trial: { id: "trial", name: "Prueba gratuita", price: 0, monthly: 200, daily: null },
-  familiar: { id: "familiar", name: "Familiar", price: 5.99, monthly: 100, daily: null },
+  familiar: { id: "familiar", name: "Plus", price: 7.99, monthly: 100, daily: null },
 };
 
 export function limitFor(plan: string | null | undefined): PlanLimit {
