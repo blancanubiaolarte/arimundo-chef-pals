@@ -352,6 +352,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (userId) db.setPlan(userId, plan);
         patch((prev) => (prev.user ? { ...prev, user: { ...prev.user, plan } } : prev));
       },
+      refreshUser: async () => {
+        const { data } = await supabase.auth.getSession();
+        await loadProfile(data.session);
+      },
+
 
       addDog: (dog) => {
         const created: Dog = {
