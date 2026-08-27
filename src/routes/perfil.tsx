@@ -104,10 +104,56 @@ function ProfilePage() {
     activeDog,
     addWeightRecord,
     weights,
+    refreshUser,
   } = useApp();
   const navigate = useNavigate();
+  const openPortal = useServerFn(createCustomerPortalSession);
+  const syncSubscription = useServerFn(syncMySubscription);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const plan = planById(user?.plan ?? "basico");
   const dogWeights = weights.filter((w) => w.dogId === activeDog?.id);
+
+  // Al volver de Stripe verificamos el pago real antes de mostrar el plan.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "exito") return;
+
+    let alive = true;
+    setCheckoutMessage("Confirmando tu pago con Stripe…");
+
+    const verify = async (attempt: number): Promise<void> => {
+      try {
+        const result = await syncSubscription({});
+        if (!alive) return;
+        if (result.ready && "plan" in result && result.plan && result.plan !== "gratis") {
+          await refreshUser();
+          if (!alive) return;
+          setCheckoutMessage("¡Suscripción activada! Gracias por tu apoyo 🐾");
+          window.history.replaceState({}, "", "/perfil");
+          return;
+        }
+      } catch {
+        // Reintentamos: el webhook puede tardar unos segundos.
+      }
+      if (!alive) return;
+      if (attempt < 5) {
+        setTimeout(() => void verify(attempt + 1), 2000);
+      } else {
+        setCheckoutMessage(
+          "Tu pago se está procesando. El plan se activará en unos minutos.",
+        );
+        window.history.replaceState({}, "", "/perfil");
+      }
+    };
+
+    void verify(0);
+    return () => {
+      alive = false;
+    };
+  }, [syncSubscription, refreshUser]);
+
 
   return (
     <AppShell title="Perfil" subtitle={user?.email}>
