@@ -8,6 +8,9 @@
 
 export const OPENAI_MODEL = "gpt-4.1-mini";
 
+/** Tiempo máximo de espera para cualquier llamada a OpenAI (ms). */
+export const OPENAI_TIMEOUT_MS = 45_000;
+
 export class MissingOpenAIKeyError extends Error {
   constructor() {
     super(
