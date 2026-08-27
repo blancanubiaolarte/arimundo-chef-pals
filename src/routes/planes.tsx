@@ -113,7 +113,7 @@ function PlansPage() {
                   ? "Tu plan actual"
                   : loadingPlan === plan.id
                     ? "Abriendo pago seguro…"
-                    : `Elegir ${plan.name.replace("Plan ", "")}`}
+                    : `Elegir ${plan.name}`}
 
               </button>
             </article>
