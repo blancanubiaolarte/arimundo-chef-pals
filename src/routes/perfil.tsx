@@ -129,13 +129,49 @@ function ProfilePage() {
               ? "Todas las funciones Premium desbloqueadas. Sin tarjeta."
               : `Hasta ${plan?.maxDogs ?? 1} perro(s) incluidos.`}
           </p>
-          <Link
-            to="/planes"
-            className="mt-3 inline-block rounded-xl bg-card px-4 py-2 text-xs font-extrabold text-foreground"
-          >
-            Gestionar suscripción
-          </Link>
+          {checkoutMessage && (
+            <p className="mt-2 text-xs font-bold opacity-95" role="status">
+              {checkoutMessage}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              to="/planes"
+              className="inline-block rounded-xl bg-card px-4 py-2 text-xs font-extrabold text-foreground"
+            >
+              Ver planes
+            </Link>
+            <button
+              type="button"
+              disabled={portalLoading}
+              onClick={async () => {
+                setPortalLoading(true);
+                setCheckoutMessage(null);
+                try {
+                  const result = await openPortal({});
+                  if (result.ready && "url" in result && result.url) {
+                    window.location.href = result.url;
+                    return;
+                  }
+                  setCheckoutMessage(
+                    ("message" in result && result.message) ||
+                      "No se pudo abrir el portal de suscripción.",
+                  );
+                } catch (e) {
+                  setCheckoutMessage(
+                    e instanceof Error ? e.message : "No se pudo abrir el portal.",
+                  );
+                } finally {
+                  setPortalLoading(false);
+                }
+              }}
+              className="inline-block rounded-xl bg-card px-4 py-2 text-xs font-extrabold text-foreground disabled:opacity-70"
+            >
+              {portalLoading ? "Abriendo…" : "Gestionar suscripción"}
+            </button>
+          </div>
         </section>
+
 
         <UsageCard />
 
