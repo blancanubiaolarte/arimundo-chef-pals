@@ -25,9 +25,11 @@ export const Route = createFileRoute("/planes")({
 });
 
 function PlansPage() {
-  const { user, trialDaysLeft, isTrialActive, choosePlan, dogs } = useApp();
+  const { user, trialDaysLeft, isTrialActive } = useApp();
   const startCheckout = useServerFn(createCheckoutSession);
-  const navigate = useNavigate();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
 
   return (
     <AppShell title="Planes" subtitle="Elige el plan ideal para tu manada">
