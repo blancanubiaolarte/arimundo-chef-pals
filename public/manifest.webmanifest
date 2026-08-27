@@ -1,0 +1,31 @@
+{
+  "name": "ARIMUNDO MASCOTAS",
+  "short_name": "ARIMUNDO",
+  "description": "Asistente inteligente de cocina canina: recetas caseras personalizadas para tu perro cada día.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#FFFDF7",
+  "theme_color": "#F6B221",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["lifestyle", "food", "health"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Receta del día", "url": "/", "description": "Ver la receta de hoy" },
+    { "name": "Chef IA", "url": "/chef", "description": "Preguntar al Chef IA" },
+    { "name": "Lista de compras", "url": "/compras", "description": "Ver la lista semanal" }
+  ]
+}
