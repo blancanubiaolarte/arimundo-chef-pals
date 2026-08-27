@@ -240,6 +240,10 @@ function ProfilePage() {
         >
           <LogOut className="size-4" /> Cerrar sesión
         </button>
+
+        <p className="pb-2 text-center text-[11px] text-muted-foreground">
+          ARIMUNDO MASCOTAS · versión {APP_VERSION} (build {APP_BUILD})
+        </p>
       </div>
     </AppShell>
   );

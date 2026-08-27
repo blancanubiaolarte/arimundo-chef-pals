@@ -57,7 +57,10 @@ export function AppShell({
       <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
 
       {!hideNav ? (
-        <nav className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 border-t border-border/60 bg-card/95 backdrop-blur">
+        <nav
+          aria-label="Navegación principal"
+          className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 border-t border-border/60 bg-card/95 backdrop-blur"
+        >
           <ul className="flex items-stretch justify-between px-2 py-2">
             {NAV.map(({ to, label, icon: Icon }) => {
               const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
