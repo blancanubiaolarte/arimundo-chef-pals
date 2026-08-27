@@ -15,10 +15,10 @@ export const Route = createFileRoute("/planes")({
       {
         name: "description",
         content:
-          "Compara los planes Básico, Plus y Premium de ARIMUNDO MASCOTAS y elige el ideal para tu manada.",
+          "Compara ARIMUNDO Chef Básico, Plus y Premium y elige el ideal para tu manada.",
       },
       { property: "og:title", content: "Planes y suscripción | ARIMUNDO MASCOTAS" },
-      { property: "og:description", content: "Básico, Plus y Premium desde $4.99 USD al mes." },
+      { property: "og:description", content: "ARIMUNDO Chef Básico, Plus y Premium desde $4.99 USD al mes." },
     ],
   }),
   component: PlansPage,
@@ -113,7 +113,7 @@ function PlansPage() {
                   ? "Tu plan actual"
                   : loadingPlan === plan.id
                     ? "Abriendo pago seguro…"
-                    : `Elegir ${plan.name.replace("Plan ", "")}`}
+                    : `Elegir ${plan.name}`}
 
               </button>
             </article>

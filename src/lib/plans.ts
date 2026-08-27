@@ -5,7 +5,7 @@ export const TRIAL_DAYS = 3;
 export const PLANS: Plan[] = [
   {
     id: "basico",
-    name: "Plan Básico",
+    name: "ARIMUNDO Chef Básico",
     price: 4.99,
     maxDogs: 1,
     tagline: "Para un compañero",
@@ -18,27 +18,27 @@ export const PLANS: Plan[] = [
   },
   {
     id: "familiar",
-    name: "Plan Plus",
+    name: "ARIMUNDO Chef Plus",
     price: 7.99,
     maxDogs: 2,
     tagline: "Para dos peluditos",
     highlighted: true,
     features: [
       "Hasta 2 perros",
-      "Todo lo del plan Básico",
+      "Todo lo del ARIMUNDO Chef Básico",
       "Plan semanal automático",
       "Chef IA sin límites",
     ],
   },
   {
     id: "premium",
-    name: "Plan Premium",
+    name: "ARIMUNDO Chef Premium",
     price: 10.99,
     maxDogs: 5,
     tagline: "Para toda la manada",
     features: [
       "Hasta 5 perros",
-      "Todo lo del plan Plus",
+      "Todo lo del ARIMUNDO Chef Plus",
       "Seguimiento de progreso y peso",
       "Notificaciones y logros",
     ],

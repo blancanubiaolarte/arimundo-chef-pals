@@ -17,12 +17,12 @@ export type PlanLimit = {
 
 export const PLAN_LIMITS: Record<UsagePlanId, PlanLimit> = {
   gratis: { id: "gratis", name: "Gratis", price: 0, monthly: null, daily: 1 },
-  basico: { id: "basico", name: "Básico", price: 4.99, monthly: 30, daily: null },
-  pro: { id: "pro", name: "Pro", price: 7.99, monthly: 100, daily: null },
-  premium: { id: "premium", name: "Premium", price: 10.99, monthly: 200, daily: null },
+  basico: { id: "basico", name: "ARIMUNDO Chef Básico", price: 4.99, monthly: 30, daily: null },
+  pro: { id: "pro", name: "ARIMUNDO Chef Plus", price: 7.99, monthly: 100, daily: null },
+  premium: { id: "premium", name: "ARIMUNDO Chef Premium", price: 10.99, monthly: 200, daily: null },
   // Compatibilidad con los planes históricos de la app
   trial: { id: "trial", name: "Prueba gratuita", price: 0, monthly: 200, daily: null },
-  familiar: { id: "familiar", name: "Plus", price: 7.99, monthly: 100, daily: null },
+  familiar: { id: "familiar", name: "ARIMUNDO Chef Plus", price: 7.99, monthly: 100, daily: null },
 };
 
 export function limitFor(plan: string | null | undefined): PlanLimit {
