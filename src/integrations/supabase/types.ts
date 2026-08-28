@@ -773,6 +773,9 @@ export type Database = {
       usage_counters: {
         Row: {
           created_at: string
+          cycle_end: string
+          cycle_generated: number
+          cycle_start: string
           daily_date: string
           daily_generated: number
           id: string
@@ -780,12 +783,16 @@ export type Database = {
           month: number
           plan: string
           recipes_generated: number
+          trial_generated: number
           updated_at: string
           user_id: string
           year: number
         }
         Insert: {
           created_at?: string
+          cycle_end?: string
+          cycle_generated?: number
+          cycle_start?: string
           daily_date?: string
           daily_generated?: number
           id?: string
@@ -793,12 +800,16 @@ export type Database = {
           month: number
           plan?: string
           recipes_generated?: number
+          trial_generated?: number
           updated_at?: string
           user_id: string
           year: number
         }
         Update: {
           created_at?: string
+          cycle_end?: string
+          cycle_generated?: number
+          cycle_start?: string
           daily_date?: string
           daily_generated?: number
           id?: string
@@ -806,6 +817,7 @@ export type Database = {
           month?: number
           plan?: string
           recipes_generated?: number
+          trial_generated?: number
           updated_at?: string
           user_id?: string
           year?: number
