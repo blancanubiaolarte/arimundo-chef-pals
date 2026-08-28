@@ -1,8 +1,8 @@
 /**
- * Control de consumo mensual/diario de recetas (solo backend).
+ * Control de consumo de recetas de IA por ciclo de facturación (solo backend).
  * Nunca se confía en el frontend: cada generación pasa por aquí.
  */
-import { limitFor, renewalDate, type UsagePlanId, type UsageSummary } from "./usage-limits";
+import { limitFor, type UsagePlanId, type UsageSummary } from "./usage-limits";
 
 type Supa = { from: (t: string) => any };
 
@@ -15,21 +15,97 @@ type Row = {
   daily_generated: number;
   daily_date: string;
   last_recipe_at: string | null;
+  cycle_start: string;
+  cycle_end: string;
+  cycle_generated: number;
+  trial_generated: number;
 };
+
+export type Entitlement = {
+  plan: UsagePlanId;
+  isTrial: boolean;
+  /** Fin del ciclo vigente (renovación de Stripe o fin de prueba) */
+  cycleStart: string;
+  cycleEnd: string;
+};
+
+function addMonths(date: Date, months: number) {
+  const d = new Date(date.getTime());
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d;
+}
+
+/**
+ * Plan activo y ciclo vigente del usuario.
+ * La fuente de verdad es la suscripción sincronizada desde Stripe.
+ */
+export async function resolveEntitlement(supabase: Supa, userId: string): Promise<Entitlement> {
+  const now = new Date();
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const activeStatus = sub?.status === "active" || sub?.status === "trialing";
+  if (activeStatus && sub?.plan && sub.plan !== "gratis") {
+    // El ciclo lo marca Stripe (current_period_end). Si aún no llegó el dato,
+    // usamos un ciclo mensual desde hoy.
+    let cycleEnd = sub.current_period_end ? new Date(sub.current_period_end) : addMonths(now, 1);
+    while (cycleEnd.getTime() <= now.getTime()) cycleEnd = addMonths(cycleEnd, 1);
+    const cycleStart = addMonths(cycleEnd, -1);
+    return {
+      plan: sub.plan as UsagePlanId,
+      isTrial: false,
+      cycleStart: cycleStart.toISOString(),
+      cycleEnd: cycleEnd.toISOString(),
+    };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, trial_ends_at, created_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profile?.trial_ends_at && new Date(profile.trial_ends_at) > now) {
+    const end = new Date(profile.trial_ends_at);
+    const start = profile.created_at ? new Date(profile.created_at) : addMonths(end, -1);
+    return {
+      plan: "trial",
+      isTrial: true,
+      cycleStart: start.toISOString(),
+      cycleEnd: end.toISOString(),
+    };
+  }
+
+  // Sin plan activo: ciclo mensual natural, límite 0.
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return {
+    plan: "gratis",
+    isTrial: false,
+    cycleStart: start.toISOString(),
+    cycleEnd: addMonths(start, 1).toISOString(),
+  };
+}
+
+/** Compatibilidad con llamadas antiguas. */
+export async function resolvePlan(supabase: Supa, userId: string): Promise<UsagePlanId> {
+  return (await resolveEntitlement(supabase, userId)).plan;
+}
 
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Lee (y crea si hace falta) el contador del usuario, reiniciándolo por mes/día. */
+/** Lee (y crea si hace falta) el contador del usuario, reiniciándolo por ciclo. */
 export async function loadUsage(
   supabase: Supa,
   userId: string,
-  plan: UsagePlanId,
+  ent: Entitlement,
 ): Promise<{ row: Row; summary: UsageSummary }> {
   const now = new Date();
-  const month = now.getUTCMonth() + 1;
-  const year = now.getUTCFullYear();
 
   const { data } = await supabase
     .from("usage_counters")
@@ -42,80 +118,99 @@ export async function loadUsage(
   if (!row) {
     const { data: created } = await supabase
       .from("usage_counters")
-      .insert({ user_id: userId, plan, month, year, daily_date: today() })
+      .insert({
+        user_id: userId,
+        plan: ent.plan,
+        month: now.getUTCMonth() + 1,
+        year: now.getUTCFullYear(),
+        daily_date: today(),
+        cycle_start: ent.cycleStart,
+        cycle_end: ent.cycleEnd,
+        cycle_generated: 0,
+        trial_generated: 0,
+      })
       .select("*")
       .maybeSingle();
     row = (created ?? {
       id: "",
-      plan,
+      plan: ent.plan,
       recipes_generated: 0,
-      month,
-      year,
+      month: now.getUTCMonth() + 1,
+      year: now.getUTCFullYear(),
       daily_generated: 0,
       daily_date: today(),
       last_recipe_at: null,
+      cycle_start: ent.cycleStart,
+      cycle_end: ent.cycleEnd,
+      cycle_generated: 0,
+      trial_generated: 0,
     }) as Row;
   }
 
-  // Reinicio automático de contadores
   const patch: Record<string, unknown> = {};
-  if (row.month !== month || row.year !== year) {
-    row = { ...row, month, year, recipes_generated: 0 };
-    patch["month"] = month;
-    patch["year"] = year;
-    patch["recipes_generated"] = 0;
+
+  // Reinicio sólo cuando el ciclo de facturación terminó.
+  const cycleExpired = !row.cycle_end || new Date(row.cycle_end).getTime() <= now.getTime();
+  if (cycleExpired) {
+    row = { ...row, cycle_start: ent.cycleStart, cycle_end: ent.cycleEnd, cycle_generated: 0 };
+    patch["cycle_start"] = ent.cycleStart;
+    patch["cycle_end"] = ent.cycleEnd;
+    patch["cycle_generated"] = 0;
+  } else if (row.cycle_end !== ent.cycleEnd && !ent.isTrial) {
+    // Cambio de plan dentro del ciclo: se conserva el consumo ya realizado.
+    row = { ...row, cycle_start: ent.cycleStart, cycle_end: ent.cycleEnd };
+    patch["cycle_start"] = ent.cycleStart;
+    patch["cycle_end"] = ent.cycleEnd;
   }
-  if (row.daily_date !== today()) {
-    row = { ...row, daily_date: today(), daily_generated: 0 };
-    patch["daily_date"] = today();
-    patch["daily_generated"] = 0;
+
+  if (row.plan !== ent.plan) {
+    row = { ...row, plan: ent.plan };
+    patch["plan"] = ent.plan;
   }
-  if (row.plan !== plan) {
-    row = { ...row, plan };
-    patch["plan"] = plan;
-  }
+
   if (Object.keys(patch).length && row.id) {
     await supabase.from("usage_counters").update(patch).eq("id", row.id);
   }
 
-  return { row, summary: summarize(row, plan) };
+  return { row, summary: summarize(row, ent) };
 }
 
-export function summarize(row: Row, plan: UsagePlanId): UsageSummary {
-  const cfg = limitFor(plan);
-  const period: "dia" | "mes" = cfg.daily !== null ? "dia" : "mes";
-  const limit = (period === "dia" ? cfg.daily : cfg.monthly) ?? 0;
-  const used = period === "dia" ? row.daily_generated : row.recipes_generated;
+export function summarize(row: Row, ent: Entitlement): UsageSummary {
+  const cfg = limitFor(ent.plan);
+  const limit = cfg.perCycle;
+  // Durante la prueba el contador es acumulado (5 en total, no por ciclo).
+  const used = ent.isTrial ? (row.trial_generated ?? 0) : (row.cycle_generated ?? 0);
   return {
-    plan,
+    plan: ent.plan,
     planName: cfg.name,
     used,
     limit,
     remaining: Math.max(0, limit - used),
-    period,
-    renewsAt: renewalDate(period),
+    period: ent.isTrial ? "prueba" : "ciclo",
+    renewsAt: ent.cycleEnd,
     lastRecipeAt: row.last_recipe_at,
-    month: row.month,
-    year: row.year,
+    isTrial: ent.isTrial,
   };
 }
 
 /** Verifica el límite ANTES de llamar a OpenAI. */
-export async function checkQuota(supabase: Supa, userId: string, plan: UsagePlanId) {
-  const { row, summary } = await loadUsage(supabase, userId, plan);
+export async function checkQuota(supabase: Supa, userId: string, ent: Entitlement) {
+  const { row, summary } = await loadUsage(supabase, userId, ent);
   return { allowed: summary.remaining > 0, row, summary };
 }
 
-/** Registra una receta generada. */
+/** Registra una receta generada con éxito. */
 export async function consumeQuota(
   supabase: Supa,
   row: Row,
-  plan: UsagePlanId,
+  ent: Entitlement,
 ): Promise<UsageSummary> {
   const next: Row = {
     ...row,
-    recipes_generated: row.recipes_generated + 1,
-    daily_generated: row.daily_generated + 1,
+    recipes_generated: (row.recipes_generated ?? 0) + 1,
+    daily_generated: (row.daily_generated ?? 0) + 1,
+    cycle_generated: (row.cycle_generated ?? 0) + 1,
+    trial_generated: (row.trial_generated ?? 0) + (ent.isTrial ? 1 : 0),
     last_recipe_at: new Date().toISOString(),
   };
   if (row.id) {
@@ -124,28 +219,11 @@ export async function consumeQuota(
       .update({
         recipes_generated: next.recipes_generated,
         daily_generated: next.daily_generated,
+        cycle_generated: next.cycle_generated,
+        trial_generated: next.trial_generated,
         last_recipe_at: next.last_recipe_at,
       })
       .eq("id", row.id);
   }
-  return summarize(next, plan);
-}
-
-/** Plan activo del usuario (perfil + suscripción Stripe cuando exista). */
-export async function resolvePlan(supabase: Supa, userId: string): Promise<UsagePlanId> {
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("plan, status")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (sub?.status === "active" && sub.plan) return sub.plan as UsagePlanId;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("plan, trial_ends_at")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date()) return "trial";
-  return ((profile?.plan as UsagePlanId) ?? "gratis") satisfies UsagePlanId;
+  return summarize(next, ent);
 }
