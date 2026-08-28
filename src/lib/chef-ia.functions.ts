@@ -149,17 +149,24 @@ export const generateRecipeIA = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { generateRecipeWithOpenAI, VET_DISCLAIMER } = await import("./chef-ia.server");
     const { sanitizeIngredients, sanitizeSteps } = await import("./dog-safety");
-    const { checkQuota, consumeQuota, resolvePlan } = await import("./usage.server");
-    const { LIMIT_REACHED_MESSAGE } = await import("./usage-limits");
+    const { checkQuota, consumeQuota, resolveEntitlement } = await import("./usage.server");
+    const { LIMIT_REACHED_MESSAGE, LIMIT_REACHED_HELP, TRIAL_LIMIT_REACHED_MESSAGE, TRIAL_LIMIT_REACHED_HELP, NO_PLAN_MESSAGE } =
+      await import("./usage-limits");
 
     // Validación de límite SIEMPRE en el backend, antes de llamar a OpenAI.
     const supa = supabase as unknown as { from: (t: string) => any };
-    const plan = await resolvePlan(supa, userId);
-    const quota = await checkQuota(supa, userId, plan);
+    const ent = await resolveEntitlement(supa, userId);
+    const quota = await checkQuota(supa, userId, ent);
     if (!quota.allowed) {
+      const noPlan = ent.plan === "gratis";
       return {
         ok: false as const,
-        error: LIMIT_REACHED_MESSAGE,
+        error: noPlan
+          ? NO_PLAN_MESSAGE
+          : ent.isTrial
+            ? TRIAL_LIMIT_REACHED_MESSAGE
+            : LIMIT_REACHED_MESSAGE,
+        help: ent.isTrial || noPlan ? TRIAL_LIMIT_REACHED_HELP : LIMIT_REACHED_HELP,
         limitReached: true as const,
         usage: quota.summary,
         disclaimer: VET_DISCLAIMER,
