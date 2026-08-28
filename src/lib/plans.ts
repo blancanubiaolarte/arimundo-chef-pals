@@ -10,10 +10,11 @@ export const PLANS: Plan[] = [
     maxDogs: 1,
     tagline: "Para un compañero",
     features: [
-      "1 perro",
+      "Hasta 1 perro",
       "Receta del día personalizada",
       "Biblioteca completa de recetas",
       "Lista de compras semanal",
+      "Hasta 30 recetas personalizadas con Chef IA por mes",
     ],
   },
   {
@@ -27,7 +28,8 @@ export const PLANS: Plan[] = [
       "Hasta 2 perros",
       "Todo lo del ARIMUNDO Chef Básico",
       "Plan semanal automático",
-      "Chef IA sin límites",
+      "Chef IA",
+      "Hasta 60 recetas personalizadas con Chef IA por mes",
     ],
   },
   {
@@ -41,6 +43,7 @@ export const PLANS: Plan[] = [
       "Todo lo del ARIMUNDO Chef Plus",
       "Seguimiento de progreso y peso",
       "Notificaciones y logros",
+      "Hasta 100 recetas personalizadas con Chef IA por mes",
     ],
   },
 ];

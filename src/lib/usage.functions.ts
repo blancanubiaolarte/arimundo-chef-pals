@@ -6,9 +6,9 @@ export const getUsageSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { loadUsage, resolvePlan } = await import("./usage.server");
+    const { loadUsage, resolveEntitlement } = await import("./usage.server");
     const supa = supabase as unknown as { from: (t: string) => any };
-    const plan = await resolvePlan(supa, userId);
-    const { summary } = await loadUsage(supa, userId, plan);
+    const ent = await resolveEntitlement(supa, userId);
+    const { summary } = await loadUsage(supa, userId, ent);
     return summary;
   });

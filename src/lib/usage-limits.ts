@@ -1,5 +1,5 @@
 /**
- * Límites de generación de recetas por plan.
+ * Límites de generación de recetas personalizadas con Chef IA.
  * Módulo isomórfico: la validación real ocurre siempre en el backend.
  */
 
@@ -9,20 +9,31 @@ export type PlanLimit = {
   id: UsagePlanId;
   name: string;
   price: number;
-  /** Recetas por mes (null si el límite es diario) */
-  monthly: number | null;
-  /** Recetas por día (null si el límite es mensual) */
-  daily: number | null;
+  /** Recetas de IA permitidas por ciclo (mes de facturación o prueba completa) */
+  perCycle: number;
+  /** "ciclo" mensual de suscripción o "prueba" gratuita */
+  period: "ciclo" | "prueba";
 };
 
 export const PLAN_LIMITS: Record<UsagePlanId, PlanLimit> = {
-  gratis: { id: "gratis", name: "Gratis", price: 0, monthly: null, daily: 1 },
-  basico: { id: "basico", name: "ARIMUNDO Chef Básico", price: 4.99, monthly: 30, daily: null },
-  pro: { id: "pro", name: "ARIMUNDO Chef Plus", price: 7.99, monthly: 100, daily: null },
-  premium: { id: "premium", name: "ARIMUNDO Chef Premium", price: 10.99, monthly: 200, daily: null },
-  // Compatibilidad con los planes históricos de la app
-  trial: { id: "trial", name: "Prueba gratuita", price: 0, monthly: 200, daily: null },
-  familiar: { id: "familiar", name: "ARIMUNDO Chef Plus", price: 7.99, monthly: 100, daily: null },
+  gratis: { id: "gratis", name: "Sin plan activo", price: 0, perCycle: 0, period: "ciclo" },
+  trial: { id: "trial", name: "Prueba gratuita", price: 0, perCycle: 5, period: "prueba" },
+  basico: { id: "basico", name: "ARIMUNDO Chef Básico", price: 4.99, perCycle: 30, period: "ciclo" },
+  pro: { id: "pro", name: "ARIMUNDO Chef Plus", price: 7.99, perCycle: 60, period: "ciclo" },
+  familiar: {
+    id: "familiar",
+    name: "ARIMUNDO Chef Plus",
+    price: 7.99,
+    perCycle: 60,
+    period: "ciclo",
+  },
+  premium: {
+    id: "premium",
+    name: "ARIMUNDO Chef Premium",
+    price: 10.99,
+    perCycle: 100,
+    period: "ciclo",
+  },
 };
 
 export function limitFor(plan: string | null | undefined): PlanLimit {
@@ -32,27 +43,36 @@ export function limitFor(plan: string | null | undefined): PlanLimit {
 export type UsageSummary = {
   plan: UsagePlanId;
   planName: string;
-  /** Usadas en el periodo vigente (mes, o día en el plan gratis) */
+  /** Recetas de IA usadas en el ciclo (o durante la prueba) */
   used: number;
   limit: number;
   remaining: number;
-  /** "dia" | "mes" */
-  period: "dia" | "mes";
-  /** Fecha en que se reinicia el contador (ISO) */
+  period: "ciclo" | "prueba";
+  /** Fecha en que se reinicia el contador (ISO) — fin del ciclo de facturación */
   renewsAt: string;
   lastRecipeAt: string | null;
-  month: number;
-  year: number;
+  isTrial: boolean;
 };
 
-/** Fecha de renovación: mañana para el plan diario, primer día del próximo mes para el resto. */
-export function renewalDate(period: "dia" | "mes", now = new Date()): string {
-  if (period === "dia") {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    return d.toISOString();
-  }
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
-}
-
 export const LIMIT_REACHED_MESSAGE =
-  "Alcanzaste el límite de recetas de tu plan. Actualiza tu suscripción para seguir creando recetas con el Chef IA.";
+  "Has alcanzado el límite mensual de recetas personalizadas con IA de tu plan.";
+
+export const LIMIT_REACHED_HELP =
+  "Puedes esperar a la renovación de tu ciclo mensual o mejorar tu plan para obtener más recetas personalizadas.";
+
+export const TRIAL_LIMIT_REACHED_MESSAGE =
+  "Has utilizado las 5 recetas personalizadas incluidas en tu prueba gratuita.";
+
+export const TRIAL_LIMIT_REACHED_HELP =
+  "Elige un plan para seguir creando recetas personalizadas con Chef IA.";
+
+export const NO_PLAN_MESSAGE =
+  "Tu prueba gratuita terminó y no tienes una suscripción activa.";
+
+/** Texto de consumo listo para mostrar en la interfaz. */
+export function usageLabel(u: UsageSummary): string {
+  if (u.isTrial) {
+    return `Te quedan ${u.remaining} de ${u.limit} recetas de IA durante tu prueba gratuita.`;
+  }
+  return `${u.remaining} de ${u.limit} recetas de IA disponibles este mes`;
+}
