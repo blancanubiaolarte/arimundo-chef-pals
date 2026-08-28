@@ -42,10 +42,10 @@ export function AuthGate({
   if (!hasAccess) {
     return (
       <div className="relative">
-        <div aria-hidden className="pointer-events-none select-none opacity-30 blur-[2px]">
+        <div aria-hidden className="pointer-events-none select-none opacity-40">
           {children}
         </div>
-        <div className="fixed inset-x-0 top-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] z-40 flex items-center justify-center bg-background/70 px-6 backdrop-blur-sm">
+        <div className="fixed inset-x-0 top-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] z-[25] flex items-center justify-center bg-background/70 px-6 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center shadow-xl">
             <Logo size={56} className="mx-auto" />
             <h2 className="mt-4 font-display text-lg font-bold">
