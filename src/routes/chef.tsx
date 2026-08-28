@@ -184,6 +184,8 @@ function ChefPage() {
           </div>
         )}
 
+        <AiUsageNotice />
+
         <Disclaimer />
 
         <form
