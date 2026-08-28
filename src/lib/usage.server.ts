@@ -6,6 +6,15 @@ import { limitFor, type UsagePlanId, type UsageSummary } from "./usage-limits";
 
 type Supa = { from: (t: string) => any };
 
+/**
+ * Cliente con permisos de servicio: el contador solo se escribe desde el
+ * backend (los usuarios únicamente pueden leer su propia fila).
+ */
+async function admin(): Promise<Supa> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as unknown as Supa;
+}
+
 type Row = {
   id: string;
   plan: string;
@@ -107,7 +116,8 @@ export async function loadUsage(
 ): Promise<{ row: Row; summary: UsageSummary }> {
   const now = new Date();
 
-  const { data } = await supabase
+  const db = await admin();
+  const { data } = await db
     .from("usage_counters")
     .select("*")
     .eq("user_id", userId)
@@ -116,7 +126,7 @@ export async function loadUsage(
   let row = data as Row | null;
 
   if (!row) {
-    const { data: created } = await supabase
+    const { data: created } = await db
       .from("usage_counters")
       .insert({
         user_id: userId,
@@ -169,7 +179,7 @@ export async function loadUsage(
   }
 
   if (Object.keys(patch).length && row.id) {
-    await supabase.from("usage_counters").update(patch).eq("id", row.id);
+    await db.from("usage_counters").update(patch).eq("id", row.id);
   }
 
   return { row, summary: summarize(row, ent) };
@@ -201,7 +211,7 @@ export async function checkQuota(supabase: Supa, userId: string, ent: Entitlemen
 
 /** Registra una receta generada con éxito. */
 export async function consumeQuota(
-  supabase: Supa,
+  _supabase: Supa,
   row: Row,
   ent: Entitlement,
 ): Promise<UsageSummary> {
@@ -214,7 +224,8 @@ export async function consumeQuota(
     last_recipe_at: new Date().toISOString(),
   };
   if (row.id) {
-    await supabase
+    const db = await admin();
+    await db
       .from("usage_counters")
       .update({
         recipes_generated: next.recipes_generated,
