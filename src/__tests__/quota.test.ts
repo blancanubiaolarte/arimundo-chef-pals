@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { limitFor, usageLabel } from "@/lib/usage-limits";
 test("limits", () => {
   expect(limitFor("trial").perCycle).toBe(5);
