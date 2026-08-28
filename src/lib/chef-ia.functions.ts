@@ -220,7 +220,7 @@ export const generateRecipeIA = createServerFn({ method: "POST" })
         .select("id, created_at")
         .maybeSingle();
 
-      const usage = await consumeQuota(supa, quota.row, plan);
+      const usage = await consumeQuota(supa, quota.row, ent);
 
       return {
         ok: true as const,
