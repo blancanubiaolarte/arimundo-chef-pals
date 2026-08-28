@@ -23,7 +23,13 @@ import { useApp } from "@/lib/app-store";
 import { planById } from "@/lib/plans";
 import { useEffect, useState } from "react";
 import { getUsageSummary } from "@/lib/usage.functions";
-import type { UsageSummary } from "@/lib/usage-limits";
+import {
+  LIMIT_REACHED_HELP,
+  LIMIT_REACHED_MESSAGE,
+  TRIAL_LIMIT_REACHED_HELP,
+  TRIAL_LIMIT_REACHED_MESSAGE,
+  type UsageSummary,
+} from "@/lib/usage-limits";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({
