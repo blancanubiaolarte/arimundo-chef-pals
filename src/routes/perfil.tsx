@@ -60,13 +60,15 @@ function UsageCard() {
   }, []);
 
   if (!usage) return null;
-  const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
+  const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 100;
 
   return (
     <section className="rounded-2xl bg-card p-4 shadow-soft">
       <h2 className="font-display text-base font-extrabold">Recetas con Chef IA</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Plan {usage.planName} · {usage.remaining} restantes este {usage.period}
+        {usage.isTrial
+          ? `Prueba gratuita · ${usage.remaining} de ${usage.limit} recetas de IA disponibles`
+          : `Plan ${usage.planName} · ${usage.remaining} de ${usage.limit} recetas de IA disponibles este mes`}
       </p>
       <p className="mt-2 font-display text-lg font-extrabold">
         {usage.used} / {usage.limit} recetas
@@ -81,15 +83,25 @@ function UsageCard() {
         <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Se renueva el {new Date(usage.renewsAt).toLocaleDateString("es")}
+        {usage.isTrial
+          ? `Tu prueba termina el ${new Date(usage.renewsAt).toLocaleDateString("es")}`
+          : `Se renueva el ${new Date(usage.renewsAt).toLocaleDateString("es")} con tu ciclo de facturación`}
       </p>
       {usage.remaining === 0 && (
-        <Link
-          to="/planes"
-          className="mt-3 inline-block rounded-xl bg-brand px-4 py-2 text-xs font-extrabold text-primary-foreground"
-        >
-          Actualizar suscripción
-        </Link>
+        <div className="mt-3 rounded-xl bg-muted p-3">
+          <p className="text-xs font-bold">
+            {usage.isTrial ? TRIAL_LIMIT_REACHED_MESSAGE : LIMIT_REACHED_MESSAGE}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {usage.isTrial ? TRIAL_LIMIT_REACHED_HELP : LIMIT_REACHED_HELP}
+          </p>
+          <Link
+            to="/planes"
+            className="mt-3 inline-block rounded-xl bg-brand px-4 py-2 text-xs font-extrabold text-primary-foreground"
+          >
+            Ver planes
+          </Link>
+        </div>
       )}
     </section>
   );
