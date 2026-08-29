@@ -331,8 +331,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
 
 if (error) {
+  console.log("ERROR DE SIGNUP:", error);
+
   return {
-    error: error.message || "Ocurrió un problema. Inténtalo nuevamente.",
+    error: JSON.stringify(error),
   };
 }
 
