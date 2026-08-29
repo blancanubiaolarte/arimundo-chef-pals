@@ -97,7 +97,7 @@ function AuthPage() {
   try {
     const result =
       mode === "signup"
-        ? await signup(
+        ? await signUp(
             name || email.split("@")[0] || "Amigo",
             email,
             password
