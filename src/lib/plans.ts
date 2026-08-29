@@ -53,6 +53,6 @@ export function planById(id: PlanId): Plan | undefined {
 }
 
 export function maxDogsFor(id: PlanId): number {
-  if (id === "trial") return 5;
+  if (id === "trial") return 2;
   return planById(id)?.maxDogs ?? 1;
 }
