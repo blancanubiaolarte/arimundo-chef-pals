@@ -111,10 +111,16 @@ function AuthPage() {
         "Revisa tu correo y confirma tu cuenta para empezar la prueba de 3 días."
       );
     }
-  } catch (err) {
-    console.error(err);
-    setError("Ocurrió un problema. Inténtalo nuevamente.");
-  } finally {
+ } catch (err) {
+  console.error("Error de autenticación:", err);
+
+  const mensaje =
+    err instanceof Error
+      ? err.message
+      : "Ocurrió un problema. Inténtalo nuevamente.";
+
+  setError(mensaje);
+} finally {
     setLoading(false);
   }
 }}>
