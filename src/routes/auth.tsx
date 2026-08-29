@@ -114,12 +114,30 @@ function AuthPage() {
  } catch (err) {
   console.error("Error de autenticación:", err);
 
-  const mensaje =
+  const mensajeOriginal =
     err instanceof Error
       ? err.message
-      : "Ocurrió un problema. Inténtalo nuevamente.";
+      : String(err || "");
 
-  setError(mensaje);
+  const mensaje = mensajeOriginal.toLowerCase();
+
+  if (
+    mode === "signup" &&
+    (
+      mensaje.includes("already registered") ||
+      mensaje.includes("already exists") ||
+      mensaje.includes("already been registered") ||
+      mensaje.includes("user already registered")
+    )
+  ) {
+    setError(
+      "Este correo electrónico ya está registrado. Inicia sesión con tu contraseña."
+    );
+  } else {
+    setError(
+      mensajeOriginal || "Ocurrió un problema. Inténtalo nuevamente."
+    );
+  }
 } finally {
     setLoading(false);
   }
