@@ -89,20 +89,35 @@ function AuthPage() {
       <form
         className="space-y-3"
         onSubmit={async (e) => {
-          e.preventDefault();
-          setError(null);
-          setInfo(null);
-          setLoading(true);
-          const result =
-            mode === "signup"
-              ? await signUp(name || email.split("@")[0] || "Amigo", email, password)
-              : await signIn(email, password);
-          setLoading(false);
-          if (result.error) setError(result.error);
-          else if (result.needsEmailConfirmation)
-            setInfo("Revisa tu correo y confirma tu cuenta para empezar la prueba de 3 días.");
-        }}
-      >
+  e.preventDefault();
+  setError(null);
+  setInfo(null);
+  setLoading(true);
+
+  try {
+    const result =
+      mode === "signup"
+        ? await signUp(
+            name || email.split("@")[0] || "Amigo",
+            email,
+            password
+          )
+        : await signIn(email, password);
+
+    if (result?.error) {
+      setError(result.error);
+    } else if (result?.needsEmailConfirmation) {
+      setInfo(
+        "Revisa tu correo y confirma tu cuenta para empezar la prueba de 3 días."
+      );
+    }
+  } catch (err) {
+    console.error(err);
+    setError("Ocurrió un problema. Inténtalo nuevamente.");
+  } finally {
+    setLoading(false);
+  }
+}}
         {mode === "signup" && (
           <input
             className={inputCls}
