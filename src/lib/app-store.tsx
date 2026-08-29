@@ -320,18 +320,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
       streak: streakFromLog(state.preparedLog.map((p) => p.date)),
       achievements,
 
-      signUp: async (name, email, password) => {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth`,
-            data: { name },
-          },
-        });
-        if (error) return { error: error.message };
-        return { needsEmailConfirmation: !data.session };
-      },
+     signUp: async (name, email, password) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth`,
+      data: { name },
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (
+    data.user &&
+    data.user.identities &&
+    data.user.identities.length === 0
+  ) {
+    return {
+      error:
+        "Este correo electrónico ya está registrado. Ingresa con tu contraseña.",
+    };
+  }
+
+  return {
+    needsEmailConfirmation: !data.session,
+  };
+},
       resendVerification: async (email) => {
   const { error } = await supabase.auth.resend({
     type: "signup",
