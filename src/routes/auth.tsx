@@ -117,7 +117,7 @@ function AuthPage() {
   } finally {
     setLoading(false);
   }
-}}
+}}>
         {mode === "signup" && (
           <input
             className={inputCls}
