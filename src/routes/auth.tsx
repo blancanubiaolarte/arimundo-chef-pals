@@ -33,7 +33,7 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signup, resendVerification, signIn, signInWithGoogle, user, dogs, hydrated } = useApp();
+  const { signUp, resendVerification, signIn, signInWithGoogle, user, dogs, hydrated } = useApp();
   const navigate = useNavigate();
 
   useEffect(() => {
