@@ -105,6 +105,8 @@ interface AppContextValue extends PersistedState {
   streak: number;
   achievements: Achievement[];
   signUp: (name: string, email: string, password: string) => Promise<AuthResult>;
+  resendVerification: (email: string) => Promise<AuthResult>;
+  resendVerification: (email: string) => Promise<{ error?: string }>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
@@ -330,6 +332,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (error) return { error: error.message };
         return { needsEmailConfirmation: !data.session };
       },
+      resendVerification: async (email) => {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth`,
+    },
+  });
+
+  if (error) return { error: error.message };
+  return {};
+},
       signIn: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         return error ? { error: error.message } : {};
