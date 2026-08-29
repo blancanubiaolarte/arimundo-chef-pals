@@ -33,7 +33,7 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signUp, signIn, signInWithGoogle, user, dogs, hydrated } = useApp();
+  const { signup, resendVerification, signIn, signInWithGoogle, user, dogs, hydrated } = useApp();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -146,6 +146,31 @@ function AuthPage() {
             </p>
           </div>
         )}
+        {mode === "signup" && info && (
+  <button
+    type="button"
+    className="w-full text-sm text-primary underline"
+    onClick={async () => {
+      if (!email) {
+        setError("Ingresa tu correo electrónico primero.");
+        return;
+      }
+
+      setError(null);
+      setInfo(null);
+
+      const result = await resendVerification(email);
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setInfo("Te enviamos nuevamente el correo de verificación. Revisa también la carpeta de spam.");
+      }
+    }}
+  >
+    ¿No recibiste el correo? Reenviar correo de verificación
+  </button>
+)}
       </form>
 
 
