@@ -331,8 +331,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
 
   if (error) {
-    return { error: error.message };
+  const mensaje = error.message.toLowerCase();
+
+  if (
+    mensaje.includes("already registered") ||
+    mensaje.includes("already exists") ||
+    mensaje.includes("user already registered")
+  ) {
+    return {
+      error: "Este correo electrónico ya está registrado. Ingresa con tu contraseña.",
+    };
   }
+
+  return { error: error.message };
+}
 
   if (
     data.user &&
