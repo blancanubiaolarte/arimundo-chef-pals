@@ -114,7 +114,7 @@ export const createCustomerPortalSession = createServerFn({ method: "POST" })
  * y actualiza la base de datos si el webhook aún no ha llegado.
  * Nunca otorga un plan sin una suscripción confirmada por Stripe.
  */
-export const syncSubscription
+export const syncSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
