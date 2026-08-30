@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { createCustomerPortalSession, syncMySubscription } from "@/lib/stripe.functions";
-
+import { createCustomerPortalSession, syncSubscription } from "@/lib/stripe.functions";
 import {
   CreditCard,
   LogOut,
