@@ -129,7 +129,7 @@ function ProfilePage() {
   } = useApp();
   const navigate = useNavigate();
   const openPortal = useServerFn(createCustomerPortalSession);
-  const syncSubscription = useServerFn(syncMySubscription);
+  const runSyncSubscription = useServerFn(syncSubscription);
   const [portalLoading, setPortalLoading] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const plan = planById(user?.plan ?? "basico");
@@ -146,7 +146,7 @@ function ProfilePage() {
 
     const verify = async (attempt: number): Promise<void> => {
       try {
-        const result = await syncSubscription({});
+        const result = await runSyncSubscription({});
         if (!alive) return;
         if (result.ready && "plan" in result && result.plan && result.plan !== "gratis") {
           await refreshUser();
