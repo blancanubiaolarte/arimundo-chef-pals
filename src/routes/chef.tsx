@@ -17,7 +17,7 @@ import {
 } from "@/lib/usage-limits";
 
 /** Consumo de recetas de IA (fuente de verdad: backend). */
-function AiUsageNotice() {
+function AiUsageNotice({ refreshKey }: { refreshKey: number }) {
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
   useEffect(() => {
@@ -30,7 +30,10 @@ function AiUsageNotice() {
     return () => {
       alive = false;
     };
-  }, []);
+    // Se vuelve a pedir cada vez que cambia refreshKey (p.ej. tras enviar un mensaje),
+    // para que el contador en pantalla no se quede desactualizado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   if (!usage) return null;
 
@@ -184,7 +187,7 @@ function ChefPage() {
           </div>
         )}
 
-        <AiUsageNotice />
+        <AiUsageNotice refreshKey={chat.length} />
 
         <Disclaimer />
 
