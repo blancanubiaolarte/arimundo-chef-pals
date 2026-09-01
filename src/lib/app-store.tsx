@@ -106,7 +106,6 @@ interface AppContextValue extends PersistedState {
   achievements: Achievement[];
   signUp: (name: string, email: string, password: string) => Promise<AuthResult>;
   resendVerification: (email: string) => Promise<AuthResult>;
-  resendVerification: (email: string) => Promise<{ error?: string }>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
