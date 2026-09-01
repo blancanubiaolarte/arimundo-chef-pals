@@ -99,6 +99,13 @@ export const askChefIA = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { askChefWithOpenAI, VET_DISCLAIMER } = await import("./chef-ia.server");
+    const { checkQuota, consumeQuota, resolveEntitlement } = await import("./usage.server");
+    const { LIMIT_REACHED_MESSAGE, LIMIT_REACHED_HELP, TRIAL_LIMIT_REACHED_MESSAGE, TRIAL_LIMIT_REACHED_HELP, NO_PLAN_MESSAGE } =
+      await import("./usage-limits");
+
+    const supa = supabase as unknown as { from: (t: string) => any };
+    const ent = await resolveEntitlement(supa, userId);
+    const quota = await checkQuota(supa, userId, ent);
 
     const { data: recipes } = await supabase
       .from("recipes")
@@ -110,6 +117,27 @@ export const askChefIA = createServerFn({ method: "POST" })
     const history = await loadHistory(supabase as unknown as Supa, dog?.id, userId);
     const blocked = [...(dog?.allergies ?? []), ...(dog?.forbidden_ingredients ?? [])];
 
+    // Validación de límite ANTES de llamar a OpenAI, igual que en generateRecipeIA.
+    if (!quota.allowed) {
+      const noPlan = ent.plan === "gratis";
+      const message = noPlan
+        ? NO_PLAN_MESSAGE
+        : ent.isTrial
+          ? TRIAL_LIMIT_REACHED_MESSAGE
+          : LIMIT_REACHED_MESSAGE;
+      const help = ent.isTrial || noPlan ? TRIAL_LIMIT_REACHED_HELP : LIMIT_REACHED_HELP;
+      return {
+        ready: false as const,
+        reply: `${message} ${help}`,
+        message: data.message,
+        candidates: recipes ?? [],
+        blocked,
+        disclaimer: VET_DISCLAIMER,
+        limitReached: true as const,
+        usage: quota.summary,
+      };
+    }
+
     try {
       const reply = await askChefWithOpenAI({
         message: data.message,
@@ -119,6 +147,7 @@ export const askChefIA = createServerFn({ method: "POST" })
         dog: toContext(dog),
         history,
       });
+      const usage = await consumeQuota(supa, quota.row, ent);
       return {
         ready: true as const,
         reply,
@@ -126,6 +155,7 @@ export const askChefIA = createServerFn({ method: "POST" })
         candidates: recipes ?? [],
         blocked,
         disclaimer: VET_DISCLAIMER,
+        usage,
       };
     } catch (error) {
       return {
@@ -135,6 +165,7 @@ export const askChefIA = createServerFn({ method: "POST" })
         candidates: recipes ?? [],
         blocked,
         disclaimer: VET_DISCLAIMER,
+        usage: quota.summary,
       };
     }
   });
