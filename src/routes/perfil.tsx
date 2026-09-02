@@ -49,7 +49,7 @@ export const Route = createFileRoute("/perfil")({
   ),
 });
 
-function UsageCard() {
+function UsageCard({ refreshKey }: { refreshKey: string | number }) {
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
   useEffect(() => {
@@ -62,7 +62,10 @@ function UsageCard() {
     return () => {
       alive = false;
     };
-  }, []);
+    // Se vuelve a pedir cuando cambia el plan del usuario (refreshKey),
+    // por ejemplo justo después de completar un pago.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   if (!usage) return null;
   const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 100;
@@ -239,7 +242,7 @@ function ProfilePage() {
         </section>
 
 
-        <UsageCard />
+        <UsageCard refreshKey={user?.plan ?? "none"} />
 
         <section className="grid grid-cols-3 gap-3">
           {[
