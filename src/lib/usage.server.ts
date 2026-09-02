@@ -51,11 +51,14 @@ function addMonths(date: Date, months: number) {
 export async function resolveEntitlement(supabase: Supa, userId: string): Promise<Entitlement> {
   const now = new Date();
 
-  const { data: sub } = await supabase
+  const { data: sub, error: subError } = await supabase
     .from("subscriptions")
     .select("plan, status, current_period_end")
     .eq("user_id", userId)
     .maybeSingle();
+
+  // DEBUG TEMPORAL — quitar después de diagnosticar.
+  console.log("[DEBUG resolveEntitlement] userId:", userId, "sub:", sub, "error:", subError);
 
   const activeStatus = sub?.status === "active" || sub?.status === "trialing";
   if (activeStatus && sub?.plan && sub.plan !== "gratis") {
