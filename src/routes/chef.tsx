@@ -106,6 +106,83 @@ const SUGGESTIONS = [
   "¿Qué puedo preparar hoy?",
 ];
 
+/**
+ * Renderizador ligero de Markdown para las respuestas del Chef IA.
+ * Soporta: títulos "### ", negritas "**texto**", listas "- " y "1. ",
+ * y respeta los saltos de línea/párrafos del texto original.
+ */
+function ChatMarkdown({ text }: { text: string }) {
+  const renderInline = (line: string, key: number) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+    return (
+      <span key={key}>
+        {parts.map((part, i) =>
+          part.startsWith("**") && part.endsWith("**") ? (
+            <strong key={i}>{part.slice(2, -2)}</strong>
+          ) : (
+            <span key={i}>{part}</span>
+          ),
+        )}
+      </span>
+    );
+  };
+
+  const blocks = text.split(/\n{2,}/);
+
+  return (
+    <div className="space-y-2.5">
+      {blocks.map((block, blockIdx) => {
+        const lines = block.split("\n").filter((l) => l.trim().length > 0);
+        if (lines.length === 0) return null;
+
+        // Título: "### Texto"
+        const firstLine = lines[0] ?? "";
+        if (firstLine.trim().startsWith("###")) {
+          return (
+            <p key={blockIdx} className="font-display text-sm font-extrabold">
+              {renderInline(firstLine.replace(/^#+\s*/, ""), 0)}
+            </p>
+          );
+        }
+
+        const isBulletList = lines.every((l) => /^\s*-\s+/.test(l));
+        if (isBulletList) {
+          return (
+            <ul key={blockIdx} className="list-disc space-y-1 pl-4">
+              {lines.map((l, i) => (
+                <li key={i}>{renderInline(l.replace(/^\s*-\s+/, ""), i)}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        const isNumberedList = lines.every((l) => /^\s*\d+[.)]\s+/.test(l));
+        if (isNumberedList) {
+          return (
+            <ol key={blockIdx} className="list-decimal space-y-1 pl-4">
+              {lines.map((l, i) => (
+                <li key={i}>{renderInline(l.replace(/^\s*\d+[.)]\s+/, ""), i)}</li>
+              ))}
+            </ol>
+          );
+        }
+
+        // Párrafo normal: cada línea dentro del bloque se separa con salto de línea.
+        return (
+          <p key={blockIdx}>
+            {lines.map((l, i) => (
+              <span key={i}>
+                {renderInline(l, i)}
+                {i < lines.length - 1 && <br />}
+              </span>
+            ))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function ChefPage() {
   const { chat, sendChatMessage, clearChat, activeDog } = useApp();
   const [input, setInput] = useState("");
@@ -155,7 +232,7 @@ function ChefPage() {
                     : "bg-card text-card-foreground"
                 }`}
               >
-                <p>{msg.content}</p>
+                <ChatMarkdown text={msg.content} />
                 {msg.recipeIds && msg.recipeIds.length > 0 && (
                   <ul className="mt-2 space-y-1">
                     {msg.recipeIds.map((id) => {
