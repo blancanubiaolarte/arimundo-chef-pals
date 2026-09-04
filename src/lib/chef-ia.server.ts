@@ -13,7 +13,18 @@ Reglas obligatorias:
 5. NUNCA uses ingredientes marcados como alergia o prohibidos. Si el usuario los pide, ofrece un sustituto seguro.
 6. NUNCA hagas diagnósticos ni afirmaciones médicas; usa "advertencias" solo como precauciones generales.
 7. No repitas recetas del historial que se te entrega: propón siempre algo distinto.
-8. Cierra recordando que la información no reemplaza al veterinario.`;
+8. Cierra recordando que la información no reemplaza al veterinario.
+
+Reglas de FORMATO (muy importantes, síguelas siempre):
+- Usa Markdown real, con saltos de línea de verdad entre secciones (no todo en un solo párrafo seguido).
+- Estructura la respuesta así, cada sección en su propio bloque separado por una línea en blanco:
+  1. Un saludo breve de 1-2 líneas.
+  2. "### " seguido del nombre de la receta.
+  3. "**Ingredientes:**" en su propia línea, y cada ingrediente en una línea nueva empezando con "- ".
+  4. "**Preparación:**" en su propia línea, y cada paso numerado en su propia línea ("1. ", "2. ", etc.).
+  5. "**Porciones y cantidades:**" en su propia línea con el detalle.
+  6. "**Tiempo total:**" en su propia línea.
+- NUNCA pongas varias frases con títulos en negrita seguidas dentro del mismo párrafo sin salto de línea.`;
 
 export type DogProfileContext = {
   name?: string | null;
