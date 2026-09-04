@@ -1,4 +1,4 @@
-import { createOpenAIJson, createOpenAIResponse } from "./openai.server";
+import { createOpenAIImage, createOpenAIJson, createOpenAIResponse } from "./openai.server";
 import { TOXIC_LIST } from "./dog-safety";
 
 export const VET_DISCLAIMER =
@@ -65,6 +65,100 @@ export function describeDog(dog: DogProfileContext | null): string {
     `Horno disponible: ${dog.hasOven ? "sí" : "no"}`,
   ];
   return lines.join("\n");
+}
+
+/** Detecta el título de receta ("### Título") dentro de una respuesta del chat. */
+export function extractRecipeTitle(reply: string): string | null {
+  const match = reply.match(/^###\s+(.+)$/m);
+  return match?.[1]?.trim() || null;
+}
+
+/** Normaliza un título para usarlo como clave de caché ("Sardinas al Horno " -> "sardinas al horno"). */
+function normalizeTitleKey(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // quita acentos
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Genera una foto apetitosa de la receta y la sube al bucket "recipe-images".
+ * Antes de generar, revisa la caché por título: si ya existe una imagen para
+ * una receta con el mismo nombre (de este u otro usuario), la reutiliza en
+ * vez de pagar por generar una nueva.
+ * Devuelve la URL firmada, o null si algo falla (nunca debe romper el chat).
+ */
+export async function generateAndUploadRecipeImage(
+  title: string,
+  userId: string,
+): Promise<string | null> {
+  const titleKey = normalizeTitleKey(title);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const cache = supabaseAdmin as unknown as {
+    from: (t: "recipe_image_cache") => {
+      select: (cols: string) => {
+        eq: (
+          col: string,
+          val: string,
+        ) => { maybeSingle: () => Promise<{ data: { image_url: string } | null }> };
+      };
+      upsert: (row: {
+        title_key: string;
+        image_path: string;
+        image_url: string;
+      }) => Promise<{ error: unknown }>;
+    };
+  };
+
+  try {
+    const { data: cached } = await cache
+      .from("recipe_image_cache")
+      .select("image_url")
+      .eq("title_key", titleKey)
+      .maybeSingle();
+    if (cached?.image_url) return cached.image_url;
+  } catch (err) {
+    console.error("[chef-ia] error leyendo caché de imagen:", err);
+    // Si falla la lectura de caché, seguimos e intentamos generar igual.
+  }
+
+  try {
+    const prompt = `Fotografía de comida realista y apetitosa, estilo editorial gastronómico, luz natural suave, fondo de madera clara: "${title}", un plato casero de comida para perro. Sin texto, sin marcas de agua, sin personas ni perros en la imagen, solo el plato servido.`;
+    const b64 = await createOpenAIImage(prompt);
+
+    const path = `ai/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`;
+    const bytes = Buffer.from(b64, "base64");
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("recipe-images")
+      .upload(path, bytes, { contentType: "image/png", upsert: true });
+    if (uploadError) {
+      console.error("[chef-ia] error subiendo imagen:", uploadError);
+      return null;
+    }
+
+    const { data: signed } = await supabaseAdmin.storage
+      .from("recipe-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    const imageUrl = signed?.signedUrl ?? null;
+    if (!imageUrl) return null;
+
+    // Guardamos en caché para la próxima vez que alguien pida esta misma receta.
+    await cache
+      .from("recipe_image_cache")
+      .upsert({ title_key: titleKey, image_path: path, image_url: imageUrl })
+      .then(
+        () => undefined,
+        (err) => console.error("[chef-ia] error guardando caché de imagen:", err),
+      );
+
+    return imageUrl;
+  } catch (err) {
+    console.error("[chef-ia] error generando imagen:", err);
+    return null;
+  }
 }
 
 export type RecipeCandidate = {
