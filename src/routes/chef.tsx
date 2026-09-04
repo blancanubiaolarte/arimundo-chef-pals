@@ -232,6 +232,14 @@ function ChefPage() {
                     : "bg-card text-card-foreground"
                 }`}
               >
+                {msg.imageUrl && (
+                  <img
+                    src={msg.imageUrl}
+                    alt="Foto de la receta generada"
+                    loading="lazy"
+                    className="mb-2 aspect-square w-full rounded-xl object-cover"
+                  />
+                )}
                 <ChatMarkdown text={msg.content} />
                 {msg.recipeIds && msg.recipeIds.length > 0 && (
                   <ul className="mt-2 space-y-1">
