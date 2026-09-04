@@ -182,4 +182,59 @@ export async function loadUsage(
     await db.from("usage_counters").update(patch).eq("id", row.id);
   }
 
-  return { row, summary:
+  return { row, summary: summarize(row, ent) };
+}
+
+export function summarize(row: Row, ent: Entitlement): UsageSummary {
+  const cfg = limitFor(ent.plan);
+  const limit = cfg.perCycle;
+  // Durante la prueba el contador es acumulado (5 en total, no por ciclo).
+  const used = ent.isTrial ? (row.trial_generated ?? 0) : (row.cycle_generated ?? 0);
+  return {
+    plan: ent.plan,
+    planName: cfg.name,
+    used,
+    limit,
+    remaining: Math.max(0, limit - used),
+    period: ent.isTrial ? "prueba" : "ciclo",
+    renewsAt: ent.cycleEnd,
+    lastRecipeAt: row.last_recipe_at,
+    isTrial: ent.isTrial,
+  };
+}
+
+/** Verifica el límite ANTES de llamar a OpenAI. */
+export async function checkQuota(supabase: Supa, userId: string, ent: Entitlement) {
+  const { row, summary } = await loadUsage(supabase, userId, ent);
+  return { allowed: summary.remaining > 0, row, summary };
+}
+
+/** Registra una receta generada con éxito. */
+export async function consumeQuota(
+  _supabase: Supa,
+  row: Row,
+  ent: Entitlement,
+): Promise<UsageSummary> {
+  const next: Row = {
+    ...row,
+    recipes_generated: (row.recipes_generated ?? 0) + 1,
+    daily_generated: (row.daily_generated ?? 0) + 1,
+    cycle_generated: (row.cycle_generated ?? 0) + 1,
+    trial_generated: (row.trial_generated ?? 0) + (ent.isTrial ? 1 : 0),
+    last_recipe_at: new Date().toISOString(),
+  };
+  if (row.id) {
+    const db = await admin();
+    await db
+      .from("usage_counters")
+      .update({
+        recipes_generated: next.recipes_generated,
+        daily_generated: next.daily_generated,
+        cycle_generated: next.cycle_generated,
+        trial_generated: next.trial_generated,
+        last_recipe_at: next.last_recipe_at,
+      })
+      .eq("id", row.id);
+  }
+  return summarize(next, ent);
+}
