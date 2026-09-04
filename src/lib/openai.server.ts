@@ -131,3 +131,43 @@ export async function createOpenAIJson<T>(
 export function hasOpenAIKey(): boolean {
   return Boolean(process.env["OPENAI_API_KEY"]);
 }
+
+/**
+ * Genera una imagen con OpenAI (modelo gpt-image-1-mini) y devuelve el resultado
+ * en base64. Se usa "best effort": si falla, quien la llama debe seguir
+ * funcionando sin imagen (nunca debe romper la generación de texto/receta).
+ */
+export async function createOpenAIImage(prompt: string): Promise<string> {
+  const apiKey = getApiKey();
+
+  let res: Response;
+  try {
+    res = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-image-1-mini",
+        prompt,
+        size: "1024x1024",
+        quality: "low",
+        n: 1,
+      }),
+      signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
+    });
+  } catch {
+    throw new Error("No se pudo generar la imagen de la receta.");
+  }
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`No se pudo generar la imagen (${res.status}). ${detail.slice(0, 200)}`);
+  }
+
+  const json = (await res.json()) as { data?: Array<{ b64_json?: string }> };
+  const b64 = json.data?.[0]?.b64_json;
+  if (!b64) throw new Error("OpenAI no devolvió ninguna imagen.");
+  return b64;
+}
