@@ -73,6 +73,78 @@ export function extractRecipeTitle(reply: string): string | null {
   return match?.[1]?.trim() || null;
 }
 
+/**
+ * Extrae, de forma best-effort, los ingredientes y pasos de una respuesta
+ * del chat en el formato Markdown que le pedimos al modelo (ver BASE_RULES).
+ * Si no encuentra una sección, devuelve un arreglo vacío (la tabla tiene
+ * valores por defecto para todo, así que nunca falla el guardado).
+ */
+function parseChatRecipe(reply: string): {
+  ingredients: { name: string; quantity: string }[];
+  steps: string[];
+} {
+  const lines = reply.split("\n");
+
+  const collectSection = (headerRegex: RegExp, itemRegex: RegExp): string[] => {
+    const start = lines.findIndex((l) => headerRegex.test(l.trim()));
+    if (start === -1) return [];
+    const items: string[] = [];
+    for (let i = start + 1; i < lines.length; i++) {
+      const line = lines[i] ?? "";
+      if (line.trim() === "") {
+        if (items.length > 0) break;
+        continue;
+      }
+      const match = line.match(itemRegex);
+      if (!match) break;
+      items.push(match[1]?.trim() ?? "");
+    }
+    return items;
+  };
+
+  const ingredientLines = collectSection(/\*\*Ingredientes:?\*\*/i, /^\s*-\s+(.+)$/);
+  const steps = collectSection(/\*\*Preparaci[oó]n:?\*\*/i, /^\s*\d+[.)]\s+(.+)$/);
+
+  const ingredients = ingredientLines.map((line) => {
+    // Intenta separar "Pollo (150g)" o "Pollo: 150g" en nombre + cantidad.
+    const parenMatch = line.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+    if (parenMatch) return { name: parenMatch[1]!.trim(), quantity: parenMatch[2]!.trim() };
+    const colonMatch = line.match(/^(.+?):\s*(.+)$/);
+    if (colonMatch) return { name: colonMatch[1]!.trim(), quantity: colonMatch[2]!.trim() };
+    return { name: line, quantity: "" };
+  });
+
+  return { ingredients, steps };
+}
+
+/**
+ * Guarda en "generated_recipes" la receta detectada en una respuesta del
+ * chat, usando el cliente autenticado del usuario (respeta RLS: cada quien
+ * guarda solo lo suyo). Si algo falla, no rompe el chat: solo se registra.
+ */
+export async function saveChatRecipe(
+  supabase: { from: (t: string) => any },
+  userId: string,
+  dogId: string | null,
+  title: string,
+  reply: string,
+  imageUrl: string | null,
+): Promise<void> {
+  try {
+    const { ingredients, steps } = parseChatRecipe(reply);
+    await supabase.from("generated_recipes").insert({
+      user_id: userId,
+      dog_id: dogId,
+      title,
+      ingredients,
+      steps,
+      image_url: imageUrl,
+    });
+  } catch (err) {
+    console.error("[chef-ia] error guardando receta del chat:", err);
+  }
+}
+
 /** Normaliza un título para usarlo como clave de caché ("Sardinas al Horno " -> "sardinas al horno"). */
 function normalizeTitleKey(title: string): string {
   return title
