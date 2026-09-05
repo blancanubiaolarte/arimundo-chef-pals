@@ -98,7 +98,13 @@ export const askChefIA = createServerFn({ method: "POST" })
   .inputValidator((input: { message: string; dogId?: string; pantry?: string[] }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { askChefWithOpenAI, VET_DISCLAIMER } = await import("./chef-ia.server");
+    const {
+      askChefWithOpenAI,
+      VET_DISCLAIMER,
+      extractRecipeTitle,
+      generateAndUploadRecipeImage,
+      saveChatRecipe,
+    } = await import("./chef-ia.server");
     const { checkQuota, consumeQuota, resolveEntitlement } = await import("./usage.server");
     const { LIMIT_REACHED_MESSAGE, LIMIT_REACHED_HELP, TRIAL_LIMIT_REACHED_MESSAGE, TRIAL_LIMIT_REACHED_HELP, NO_PLAN_MESSAGE } =
       await import("./usage-limits");
@@ -148,6 +154,17 @@ export const askChefIA = createServerFn({ method: "POST" })
         history,
       });
       const usage = await consumeQuota(supa, quota.row, ent);
+
+      // Si la respuesta trae una receta (título con "### "), generamos su foto
+      // y la guardamos en el historial del usuario. "Best effort": si algo de
+      // esto falla, la receta en texto igual se entrega.
+      let imageUrl: string | null = null;
+      const title = extractRecipeTitle(reply);
+      if (title) {
+        imageUrl = await generateAndUploadRecipeImage(title, userId);
+        await saveChatRecipe(supabase, userId, dog?.id ?? null, title, reply, imageUrl);
+      }
+
       return {
         ready: true as const,
         reply,
@@ -156,6 +173,7 @@ export const askChefIA = createServerFn({ method: "POST" })
         blocked,
         disclaimer: VET_DISCLAIMER,
         usage,
+        imageUrl,
       };
     } catch (error) {
       return {
