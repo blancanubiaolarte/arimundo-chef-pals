@@ -392,9 +392,12 @@ function Dashboard() {
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-wood-gradient py-3.5 text-sm font-extrabold text-wood-foreground shadow-soft transition-transform active:scale-[0.97]"
             >
               <Sparkles className="size-4" /> Buscar receta
-            </button>
-          </form>
-        </section>
+                   </button>
+      </form>
+      <div className="mt-3">
+        <AiUsageNotice refreshKey={user?.plan ?? "none"} />
+      </div>
+    </section>
 
         <section>
           <h2 className="mb-2 font-display text-base font-extrabold">Tu progreso</h2>
